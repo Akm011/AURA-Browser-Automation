@@ -1,0 +1,24 @@
+[project]
+name = "aura-api"
+version = "0.0.1"
+description = "FastAPI backend for AURA (Month 1 Week 3)"
+requires-python = ">=3.11"
+dependencies = [
+    "aura-browser",
+    "aura-models",
+    "aura-planner",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+]
+
+[tool.uv.sources]
+aura-browser = { workspace = true }
+aura-models = { workspace = true }
+aura-planner = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aura_api"]

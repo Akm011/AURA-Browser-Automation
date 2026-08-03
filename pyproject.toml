@@ -1,0 +1,40 @@
+[project]
+name = "aura"
+version = "0.0.1"
+description = "AURA v0.1 – Enterprise Browser Intelligence Platform"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.uv.workspace]
+members = [
+    "packages/models",
+    "packages/browser",
+    "packages/skills",
+    "packages/planner",
+    "apps/api",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.8",
+    "aura-browser",
+    "aura-models",
+]
+
+[tool.uv.sources]
+aura-browser = { workspace = true }
+aura-models = { workspace = true }
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]

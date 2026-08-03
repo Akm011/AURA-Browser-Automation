@@ -1,0 +1,20 @@
+[project]
+name = "aura-skills"
+version = "0.0.1"
+description = "Reusable browser skills for AURA"
+requires-python = ">=3.11"
+dependencies = [
+    "aura-browser",
+    "aura-models",
+]
+
+[tool.uv.sources]
+aura-browser = { workspace = true }
+aura-models = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aura_skills"]

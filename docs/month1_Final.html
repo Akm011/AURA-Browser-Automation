@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AURA v0.1 - Month 1 Final</title>
+<style>
+body{font-family:Segoe UI,Arial,sans-serif;max-width:1250px;margin:auto;padding:32px;line-height:1.7;background:#f5f7fb;color:#222}
+h1,h2,h3{color:#123b6d}
+.card{background:#fff;border:1px solid #d9e2ec;border-radius:10px;padding:18px;margin:18px 0}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ccd6e0;padding:10px;vertical-align:top}
+th{background:#eef5ff}
+pre{background:#f4f4f4;padding:12px;border-radius:6px}
+code{background:#eef;padding:2px 5px}
+</style>
+</head>
+<body>
+
+<h1>Project AURA v0.1 – Browser Intelligence Core</h1>
+<h2>Month 1 Engineering Blueprint (Final)</h2>
+
+<div class="card">
+<h2>Product Vision</h2>
+<p><b>AURA</b> is an Enterprise Browser Intelligence Platform that teaches AI to understand and operate arbitrary websites like a human. It is <b>not</b> an IRCTC bot, SAP bot or Salesforce bot. Those become demonstrations of the same underlying platform.</p>
+<p><b>Goal:</b> Build the reusable foundation that can later power browser automation, self-healing navigation, multi-agent workflows and enterprise automation.</p>
+</div>
+
+<div class="card">
+<h2>Problem Statement</h2>
+<p>Current browser automation frameworks require website-specific scripts with hardcoded selectors and navigation logic. Every UI change introduces maintenance work.</p>
+
+<p>AURA replaces website-specific automation with:</p>
+<ul>
+<li>Natural language task understanding</li>
+<li>Reusable browser skills</li>
+<li>Planning before execution</li>
+<li>Website memory</li>
+<li>Execution history</li>
+<li>AI-ready architecture</li>
+</ul>
+</div>
+
+<div class="card">
+<h2>Month 1 Scope</h2>
+<h3>What will be completed?</h3>
+<ul>
+<li>Natural language → execution plan</li>
+<li>Generic browser execution engine</li>
+<li>Playwright integration</li>
+<li>FastAPI backend</li>
+<li>Website detection</li>
+<li>Execution history</li>
+<li>Browser Skill framework</li>
+<li>Documentation & CI</li>
+</ul>
+
+<h3>What is intentionally NOT included?</h3>
+<ul>
+<li>Self healing (Month 3)</li>
+<li>Vision reasoning (Month 2)</li>
+<li>Website memory learning (Month 3)</li>
+<li>Multi-agent orchestration (Month 4)</li>
+</ul>
+</div>
+
+<div class="card">
+<h2>Architecture</h2>
+<pre>
+User
+   │
+Natural Language Request
+   │
+Planner (LangGraph)
+   │
+Intent Parser
+   │
+Browser Skill Planner
+   │
+Browser Skill Engine
+   │
+Playwright
+   │
+Website
+   │
+Execution History
+</pre>
+</div>
+
+<div class="card">
+<h2>Core Browser Skills (Reusable)</h2>
+<p>Instead of creating website adapters, AURA provides reusable browser skills that work across different websites.</p>
+
+<table>
+<tr><th>Skill</th><th>Description</th></tr>
+<tr><td>FindLoginForm</td><td>Locate authentication forms.</td></tr>
+<tr><td>FillInput</td><td>Fill text fields intelligently.</td></tr>
+<tr><td>ClickElement</td><td>Click buttons, links or menus.</td></tr>
+<tr><td>SelectDropdown</td><td>Select values from dropdowns.</td></tr>
+<tr><td>NavigateMenu</td><td>Traverse hierarchical menus.</td></tr>
+<tr><td>FindSearchBar</td><td>Locate search interfaces.</td></tr>
+<tr><td>ExtractTable</td><td>Read structured table data.</td></tr>
+<tr><td>DownloadFile</td><td>Handle browser downloads.</td></tr>
+<tr><td>UploadFile</td><td>Upload documents.</td></tr>
+<tr><td>CaptureScreenshot</td><td>Create execution evidence.</td></tr>
+<tr><td>WaitForDownload</td><td>Synchronize downloads.</td></tr>
+<tr><td>HandlePopup</td><td>Dismiss dialogs and alerts.</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h2>Repository Structure</h2>
+<pre>
+AURA/
+ apps/
+   api/
+   dashboard/
+ packages/
+   planner/
+   browser/
+   skills/
+   models/
+ services/
+   execution/
+   logging/
+ docs/
+ tests/
+ .github/
+ docker/
+</pre>
+</div>
+
+<div class="card">
+<h2>Weekly Plan</h2>
+
+<table>
+<tr>
+<th>Week</th>
+<th>Learning</th>
+<th>Weekend Sprint</th>
+</tr>
+
+<tr>
+<td>Week 1</td>
+<td>
+Modern Python, uv, AsyncIO, Playwright, Pydantic, project architecture.<br><br>
+<b>System Design:</b> Browser SDK Architecture (2 hrs)<br>
+<b>DSA:</b> Arrays & HashMap (1 hr)
+</td>
+<td>
+<ul>
+<li>Create monorepo</li>
+<li>Implement Browser Manager</li>
+<li>Configuration module</li>
+<li>Logging</li>
+<li>Launch any URL</li>
+<li>Release v0.0.1</li>
+</ul>
+</td>
+</tr>
+
+<tr>
+<td>Week 2</td>
+<td>
+LangGraph, planning, state, structured outputs.<br><br>
+<b>System Design:</b> Planner Architecture<br>
+<b>DSA:</b> Sliding Window
+</td>
+<td>
+<ul>
+<li>Planner Agent</li>
+<li>Execution Planner</li>
+<li>Implement first 6 Browser Skills</li>
+<li>Generic action executor</li>
+<li>Release v0.0.2</li>
+</ul>
+</td>
+</tr>
+
+<tr>
+<td>Week 3</td>
+<td>
+FastAPI, Docker, Testing, CI/CD.<br><br>
+<b>System Design:</b> API-first Platform Design<br>
+<b>DSA:</b> Stack & Queue
+</td>
+<td>
+<ul>
+<li>REST APIs</li>
+<li>Browser execution service</li>
+<li>Simple dashboard</li>
+<li>Docker</li>
+<li>GitHub Actions</li>
+<li>Release v0.0.3</li>
+</ul>
+</td>
+</tr>
+
+<tr>
+<td>Week 4</td>
+<td>
+LangSmith basics, tracing, observability, retry patterns.<br><br>
+<b>System Design:</b> Execution Observability<br>
+<b>DSA:</b> Trees (BFS/DFS)
+</td>
+<td>
+<ul>
+<li>Execution history</li>
+<li>Tracing</li>
+<li>Documentation</li>
+<li>Architecture diagrams</li>
+<li>Demo video</li>
+<li>Release v0.1.0</li>
+</ul>
+</td>
+</tr>
+
+</table>
+</div>
+
+<div class="card">
+<h2>Month 1 Demo</h2>
+<p>The user types:</p>
+<pre>Open https://example-portal.com, login, navigate to Reports and download the latest PDF.</pre>
+
+<p>AURA will:</p>
+<ol>
+<li>Understand the request.</li>
+<li>Generate an execution plan.</li>
+<li>Launch Playwright.</li>
+<li>Use generic Browser Skills (not website-specific code).</li>
+<li>Navigate through the website.</li>
+<li>Download the document.</li>
+<li>Capture screenshots.</li>
+<li>Return execution logs and artifacts.</li>
+</ol>
+
+<p>The same engine should work on multiple websites without creating dedicated adapters.</p>
+</div>
+
+<div class="card">
+<h2>Month-end Deliverables</h2>
+<ul>
+<li>✅ Generic Browser Intelligence Engine</li>
+<li>✅ Browser Skill framework</li>
+<li>✅ LangGraph Planner</li>
+<li>✅ FastAPI backend</li>
+<li>✅ Playwright integration</li>
+<li>✅ Dashboard MVP</li>
+<li>✅ Docker deployment</li>
+<li>✅ GitHub Actions</li>
+<li>✅ Architecture diagrams</li>
+<li>✅ 25–30 meaningful commits</li>
+<li>✅ Resume & LinkedIn update</li>
+<li>✅ Begin international job applications</li>
+</ul>
+</div>
+
+<div class="card">
+<h2>Resume Bullet</h2>
+<p><b>AURA Browser Intelligence Core (v0.1)</b></p>
+<p>Designed and developed a generic AI-powered Browser Intelligence Platform using Playwright, LangGraph, FastAPI and Async Python that converts natural-language requests into reusable browser workflows through a modular Browser Skill framework, eliminating website-specific automation logic.</p>
+</div>
+
+</body>
+</html>
