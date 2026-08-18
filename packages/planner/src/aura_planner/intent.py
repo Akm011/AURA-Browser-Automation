@@ -6,6 +6,10 @@ from aura_models.planning import ParsedIntent
 
 URL_PATTERN = re.compile(r"https?://[^\s,]+", re.I)
 QUOTED_TEXT = re.compile(r"['\"]([^'\"]+)['\"]")
+WAIT_PATTERN = re.compile(
+    r"wait(?:\s+for)?\s+(\d+(?:\.\d+)?)\s*(seconds?|secs?|s|minutes?|mins?|m)\b",
+    re.I,
+)
 
 
 class IntentParser:
@@ -24,6 +28,7 @@ class IntentParser:
         "select": "select",
         "download": "download",
         "menu": "menu",
+        "wait": "wait",
     }
 
     def parse(self, request: str) -> ParsedIntent:
@@ -48,10 +53,24 @@ class IntentParser:
 
     def _detect_actions(self, text: str) -> list[str]:
         lowered = text.lower()
-        found: list[str] = []
+        matches: list[tuple[int, str, str]] = []
+
         for keyword, action in self.ACTION_KEYWORDS.items():
-            if keyword in lowered and action not in found:
+            start = 0
+            while True:
+                idx = lowered.find(keyword, start)
+                if idx < 0:
+                    break
+                matches.append((idx, len(keyword), action))
+                start = idx + len(keyword)
+
+        matches.sort(key=lambda item: item[0])
+
+        found: list[str] = []
+        for _, _, action in matches:
+            if action not in found:
                 found.append(action)
+
         if not found:
             found.append("navigate")
         return found
@@ -64,9 +83,18 @@ class IntentParser:
             if len(quoted) > 1:
                 entities["secondary_text"] = quoted[1]
 
-        click_match = re.search(r"click(?: on)?\s+(.+?)(?:\.|,|$)", text, re.I)
+        wait_match = WAIT_PATTERN.search(text)
+        if wait_match:
+            entities["wait_seconds"] = str(self._parse_duration(wait_match.group(1), wait_match.group(2)))
+
+        click_match = re.search(
+            r"click(?: on)?\s+(.+?)(?:\s+and\s+wait\b|\s+wait\b|\.\s|,|$)",
+            text,
+            re.I,
+        )
         if click_match and "click_target" not in entities:
             target = click_match.group(1).strip().strip("'\"")
+            target = re.split(r"\s+and\s+wait\b", target, maxsplit=1, flags=re.I)[0].strip()
             if target:
                 entities["click_target"] = target
 
@@ -79,3 +107,10 @@ class IntentParser:
             entities["menu_path"] = menu_match.group(1).strip()
 
         return entities
+
+    @staticmethod
+    def _parse_duration(value: str, unit: str) -> float:
+        seconds = float(value)
+        if unit.lower().startswith("m"):
+            seconds *= 60
+        return seconds

@@ -137,4 +137,17 @@ class ExecutionPlanner:
                 )
             ]
 
+        if action == "wait":
+            raw_seconds = intent.entities.get("wait_seconds")
+            if not raw_seconds:
+                return []
+            seconds = float(raw_seconds)
+            return [
+                PlanStep(
+                    skill="Wait",
+                    params={"seconds": seconds},
+                    description=f"Wait for {seconds} seconds",
+                )
+            ]
+
         return []

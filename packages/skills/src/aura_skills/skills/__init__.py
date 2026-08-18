@@ -4,6 +4,7 @@ from aura_skills.skills.find_login_form import FindLoginForm
 from aura_skills.skills.find_search_bar import FindSearchBar
 from aura_skills.skills.navigate_menu import NavigateMenu
 from aura_skills.skills.select_dropdown import SelectDropdown
+from aura_skills.skills.wait import Wait
 
 WEEK2_SKILLS = [
     FindLoginForm,
@@ -12,6 +13,7 @@ WEEK2_SKILLS = [
     SelectDropdown,
     NavigateMenu,
     FindSearchBar,
+    Wait,
 ]
 
 __all__ = [
@@ -21,5 +23,6 @@ __all__ = [
     "FindSearchBar",
     "NavigateMenu",
     "SelectDropdown",
+    "Wait",
     "WEEK2_SKILLS",
 ]

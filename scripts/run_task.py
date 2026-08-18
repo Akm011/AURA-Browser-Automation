@@ -31,7 +31,7 @@ async def main() -> int:
 
     agent = PlannerAgent()
     plan = agent.plan(args.request)
-
+    print(f"Plan is {plan}")
     if args.plan_only:
         print(json.dumps(plan.model_dump(mode="json"), indent=2))
         return 0
