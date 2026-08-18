@@ -6,6 +6,7 @@ requires-python = ">=3.11"
 dependencies = [
     "aura-models",
     "aura-skills",
+    "langgraph>=0.2",
 ]
 
 [tool.uv.sources]

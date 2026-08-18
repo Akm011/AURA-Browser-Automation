@@ -22,11 +22,15 @@ dev = [
     "ruff>=0.8",
     "aura-browser",
     "aura-models",
+    "aura-planner",
+    "aura-skills",
 ]
 
 [tool.uv.sources]
 aura-browser = { workspace = true }
 aura-models = { workspace = true }
+aura-planner = { workspace = true }
+aura-skills = { workspace = true }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
