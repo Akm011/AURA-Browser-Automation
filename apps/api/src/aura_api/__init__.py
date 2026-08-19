@@ -1,3 +1,5 @@
-"""FastAPI backend (Month 1 Week 3)."""
+"""FastAPI backend for AURA (Month 1 Week 3)."""
 
-__all__: list[str] = []
+from aura_api.main import app, create_app
+
+__all__ = ["app", "create_app"]
