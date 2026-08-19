@@ -5,6 +5,7 @@ description = "FastAPI backend for AURA (Month 1 Week 3)"
 requires-python = ">=3.11"
 dependencies = [
     "aura-browser",
+    "aura-execution",
     "aura-models",
     "aura-planner",
     "fastapi>=0.115",
@@ -13,6 +14,7 @@ dependencies = [
 
 [tool.uv.sources]
 aura-browser = { workspace = true }
+aura-execution = { workspace = true }
 aura-models = { workspace = true }
 aura-planner = { workspace = true }
 

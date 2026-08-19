@@ -18,6 +18,7 @@ class AuraSettings(BaseSettings):
     app_version: str = "0.0.1"
     log_level: str = "INFO"
     log_json: bool = False
+    cors_origins: list[str] = Field(default=["http://localhost:8000", "http://127.0.0.1:8000"])
 
     browser_headless: bool = False
     browser_timeout_ms: int = 30_000

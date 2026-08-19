@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AURA Dashboard</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #fff;
+      --border: #d9e2ec;
+      --text: #222;
+      --accent: #123b6d;
+      --muted: #627d98;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    header {
+      background: var(--accent);
+      color: #fff;
+      padding: 1rem 1.5rem;
+    }
+    header h1 { margin: 0; font-size: 1.25rem; }
+    header p { margin: 0.25rem 0 0; opacity: 0.85; font-size: 0.9rem; }
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    h2 { margin: 0 0 0.75rem; font-size: 1rem; color: var(--accent); }
+    label { display: block; font-weight: 600; margin-bottom: 0.35rem; }
+    textarea {
+      width: 100%;
+      min-height: 80px;
+      padding: 0.65rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font: inherit;
+      resize: vertical;
+    }
+    .row { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; margin-top: 0.75rem; }
+    button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.55rem 1rem;
+      font: inherit;
+      cursor: pointer;
+    }
+    button.secondary { background: #486581; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .status-pill {
+      display: inline-block;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .status-pill.ok { background: #d9f7be; color: #135200; }
+    .status-pill.pending { background: #fff1b8; color: #614700; }
+    .status-pill.running { background: #bae7ff; color: #003a8c; }
+    .status-pill.completed { background: #d9f7be; color: #135200; }
+    .status-pill.failed { background: #ffccc7; color: #820014; }
+    pre {
+      background: #f4f4f4;
+      padding: 0.75rem;
+      border-radius: 6px;
+      overflow: auto;
+      font-size: 0.85rem;
+      max-height: 320px;
+    }
+    .skills { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .skill {
+      background: #eef5ff;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.2rem 0.65rem;
+      font-size: 0.85rem;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td {
+      border-bottom: 1px solid var(--border);
+      padding: 0.55rem 0.35rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { color: var(--muted); font-weight: 600; }
+    .muted { color: var(--muted); font-size: 0.9rem; }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AURA Browser Intelligence</h1>
+    <p>Week 3 dashboard – submit and monitor browser tasks</p>
+  </header>
+  <main>
+    <section class="card">
+      <h2>Status</h2>
+      <div id="health" class="muted">Loading…</div>
+    </section>
+
+    <section class="card">
+      <h2>Browser skills</h2>
+      <div id="skills" class="skills muted">Loading…</div>
+    </section>
+
+    <section class="card">
+      <h2>New task</h2>
+      <label for="request">Natural language request</label>
+      <textarea id="request" placeholder="Open https://example.com and click More information"></textarea>
+      <div class="row">
+        <label><input type="checkbox" id="headed"> Headed browser</label>
+        <button type="button" id="plan-btn" class="secondary">Plan only</button>
+        <button type="button" id="execute-btn">Execute now</button>
+        <button type="button" id="queue-btn" class="secondary">Queue task</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Last response</h2>
+      <pre id="output">No requests yet.</pre>
+    </section>
+
+    <section class="card">
+      <h2>Recent tasks</h2>
+      <div class="row">
+        <button type="button" id="refresh-btn" class="secondary">Refresh</button>
+        <span class="muted">API docs: <a href="/docs">/docs</a></span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Request</th>
+            <th>Status</th>
+            <th>Updated</th>
+          </tr>
+        </thead>
+        <tbody id="tasks">
+          <tr><td colspan="4" class="muted">No tasks yet.</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    const API = "/api/v1";
+    const output = document.getElementById("output");
+    const requestEl = document.getElementById("request");
+
+    function show(data) {
+      output.textContent = typeof data === "string" ? data : JSON.stringify(data, null, 2);
+    }
+
+    async function api(path, options = {}) {
+      const res = await fetch(API + path, {
+        headers: { "Content-Type": "application/json" },
+        ...options,
+      });
+      const text = await res.text();
+      let body;
+      try { body = text ? JSON.parse(text) : null; } catch { body = text; }
+      if (!res.ok) throw new Error(typeof body === "object" ? JSON.stringify(body) : body);
+      return body;
+    }
+
+    function statusClass(status) {
+      return status.toLowerCase();
+    }
+
+    async function loadHealth() {
+      const health = await api("/health");
+      document.getElementById("health").innerHTML =
+        `<span class="status-pill ok">${health.status}</span> ${health.app_name} v${health.version}`;
+    }
+
+    async function loadSkills() {
+      const data = await api("/skills");
+      const el = document.getElementById("skills");
+      el.innerHTML = "";
+      data.skills.forEach((name) => {
+        const span = document.createElement("span");
+        span.className = "skill";
+        span.textContent = name;
+        el.appendChild(span);
+      });
+    }
+
+    async function loadTasks() {
+      const tasks = await api("/tasks?limit=10");
+      const tbody = document.getElementById("tasks");
+      if (!tasks.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="muted">No tasks yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = tasks.map((task) => `
+        <tr>
+          <td><code>${task.id.slice(0, 8)}…</code></td>
+          <td>${escapeHtml(task.request)}</td>
+          <td><span class="status-pill ${statusClass(task.status)}">${task.status}</span></td>
+          <td class="muted">${task.updated_at}</td>
+        </tr>
+      `).join("");
+    }
+
+    function escapeHtml(value) {
+      return value
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function payload() {
+      return {
+        request: requestEl.value.trim(),
+        headed: document.getElementById("headed").checked,
+      };
+    }
+
+    document.getElementById("plan-btn").addEventListener("click", async () => {
+      try {
+        show(await api("/plan", { method: "POST", body: JSON.stringify({ request: payload().request }) }));
+      } catch (err) { show(String(err)); }
+    });
+
+    document.getElementById("execute-btn").addEventListener("click", async () => {
+      try {
+        show(await api("/execute", { method: "POST", body: JSON.stringify({ ...payload(), plan_only: false }) }));
+        await loadTasks();
+      } catch (err) { show(String(err)); }
+    });
+
+    document.getElementById("queue-btn").addEventListener("click", async () => {
+      try {
+        show(await api("/tasks", { method: "POST", body: JSON.stringify(payload()) }));
+        await loadTasks();
+      } catch (err) { show(String(err)); }
+    });
+
+    document.getElementById("refresh-btn").addEventListener("click", loadTasks);
+
+    Promise.all([loadHealth(), loadSkills(), loadTasks()]).catch((err) => show(String(err)));
+    setInterval(loadTasks, 5000);
+  </script>
+</body>
+</html>

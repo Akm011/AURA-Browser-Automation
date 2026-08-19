@@ -31,12 +31,13 @@ def create_app() -> FastAPI:
     app.include_router(router)
 
     dashboard_dir = _dashboard_dir()
-    if dashboard_dir.exists():
+    dashboard_index = dashboard_dir / "index.html"
+    if dashboard_index.is_file():
         app.mount("/assets", StaticFiles(directory=dashboard_dir), name="assets")
 
         @app.get("/", include_in_schema=False)
         async def dashboard() -> FileResponse:
-            return FileResponse(dashboard_dir / "index.html")
+            return FileResponse(dashboard_index)
 
     @app.on_event("shutdown")
     async def shutdown() -> None:
