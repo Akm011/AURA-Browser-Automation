@@ -12,6 +12,7 @@ members = [
     "packages/browser",
     "packages/skills",
     "packages/planner",
+    "services/execution",
     "apps/api",
 ]
 
@@ -31,6 +32,7 @@ aura-browser = { workspace = true }
 aura-models = { workspace = true }
 aura-planner = { workspace = true }
 aura-skills = { workspace = true }
+aura-execution = { workspace = true }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

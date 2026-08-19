@@ -7,6 +7,7 @@ members = [
     "aura",
     "aura-api",
     "aura-browser",
+    "aura-execution",
     "aura-models",
     "aura-planner",
     "aura-skills",
@@ -78,6 +79,7 @@ version = "0.0.1"
 source = { editable = "apps/api" }
 dependencies = [
     { name = "aura-browser" },
+    { name = "aura-execution" },
     { name = "aura-models" },
     { name = "aura-planner" },
     { name = "fastapi" },
@@ -87,6 +89,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "aura-browser", editable = "packages/browser" },
+    { name = "aura-execution", editable = "services/execution" },
     { name = "aura-models", editable = "packages/models" },
     { name = "aura-planner", editable = "packages/planner" },
     { name = "fastapi", specifier = ">=0.115" },
@@ -108,6 +111,25 @@ requires-dist = [
     { name = "aura-models", editable = "packages/models" },
     { name = "playwright", specifier = ">=1.49" },
     { name = "structlog", specifier = ">=24.0" },
+]
+
+[[package]]
+name = "aura-execution"
+version = "0.0.3"
+source = { editable = "services/execution" }
+dependencies = [
+    { name = "aura-browser" },
+    { name = "aura-models" },
+    { name = "aura-planner" },
+    { name = "aura-skills" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aura-browser", editable = "packages/browser" },
+    { name = "aura-models", editable = "packages/models" },
+    { name = "aura-planner", editable = "packages/planner" },
+    { name = "aura-skills", editable = "packages/skills" },
 ]
 
 [[package]]
