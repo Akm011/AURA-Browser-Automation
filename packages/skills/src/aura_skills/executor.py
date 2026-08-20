@@ -1,13 +1,25 @@
 from __future__ import annotations
 
+import time
 from typing import Any
 
-from playwright.async_api import Page
+from aura_browser import get_logger
+from playwright.async_api import Error as PlaywrightError
+from playwright.async_api import Page, TimeoutError as PlaywrightTimeoutError
 
 from aura_models.config import AuraSettings
-from aura_models.planning import ExecutionPlan, PlanExecutionResult, PlanStep, StepExecutionResult
+from aura_models.planning import (
+    ExecutionPlan,
+    PlanExecutionResult,
+    PlanStep,
+    StepExecutionResult,
+)
+
 from aura_skills.base import SkillContext
 from aura_skills.registry import SkillRegistry, default_registry
+
+
+logger = get_logger(__name__)
 
 
 class ActionExecutor:
@@ -15,20 +27,23 @@ class ActionExecutor:
 
     NAVIGATE_SKILL = "Navigate"
 
-    def __init__(
-        self,
-        registry: SkillRegistry | None = None,
-        settings: AuraSettings | None = None,
-    ) -> None:
+    def __init__( self, registry: SkillRegistry | None = None, settings: AuraSettings | None = None, run_id: str | None = None, ) -> None:
         self.registry = registry or default_registry()
         self.settings = settings or AuraSettings()
+        self.run_id = run_id
 
-    async def execute_plan(self, plan: ExecutionPlan, page: Page) -> PlanExecutionResult:
+    async def execute_plan( self, plan: ExecutionPlan, page: Page, ) -> PlanExecutionResult:
         step_results: list[StepExecutionResult] = []
 
         for index, step in enumerate(plan.steps):
-            result = await self._execute_step(index, step, page)
+            result = await self._execute_step(
+                index,
+                step,
+                page,
+            )
+
             step_results.append(result)
+
             if not result.success:
                 return PlanExecutionResult(
                     success=False,
@@ -37,7 +52,11 @@ class ActionExecutor:
                     error=result.message,
                 )
 
-        return PlanExecutionResult(success=True, plan=plan, step_results=step_results)
+        return PlanExecutionResult(
+            success=True,
+            plan=plan,
+            step_results=step_results,
+        )
 
     async def _execute_step(
         self,
@@ -45,30 +64,90 @@ class ActionExecutor:
         step: PlanStep,
         page: Page,
     ) -> StepExecutionResult:
-        if step.skill == self.NAVIGATE_SKILL:
-            return await self._navigate(index, step, page)
+        started = time.perf_counter()
 
-        skill = self.registry.get(step.skill)
-        if skill is None:
-            return StepExecutionResult(
-                step_index=index,
-                skill=step.skill,
-                success=False,
-                message=f"Unknown skill: {step.skill}",
-            )
-
-        context = SkillContext(page=page, settings=self.settings)
-        outcome = await skill.execute(context, **step.params)
-        return StepExecutionResult(
+        logger.info(
+            "step.started",
+            run_id=self.run_id,
             step_index=index,
             skill=step.skill,
-            success=outcome.success,
-            message=outcome.message,
-            data=outcome.data,
         )
 
-    async def _navigate(self, index: int, step: PlanStep, page: Page) -> StepExecutionResult:
+        try:
+            if step.skill == self.NAVIGATE_SKILL:
+                result = await self._navigate(
+                    index,
+                    step,
+                    page,
+                )
+            else:
+                skill = self.registry.get(step.skill)
+
+                if skill is None:
+                    result = StepExecutionResult(
+                        step_index=index,
+                        skill=step.skill,
+                        success=False,
+                        message=f"Unknown skill: {step.skill}",
+                    )
+                else:
+                    context = SkillContext(
+                        page=page,
+                        settings=self.settings,
+                    )
+
+                    outcome = await skill.execute(
+                        context,
+                        **step.params,
+                    )
+
+                    result = StepExecutionResult(
+                        step_index=index,
+                        skill=step.skill,
+                        success=outcome.success,
+                        message=outcome.message,
+                        data=outcome.data,
+                    )
+
+            duration_ms = (
+                time.perf_counter() - started
+            ) * 1000
+
+            logger.info(
+                "step.completed",
+                run_id=self.run_id,
+                step_index=index,
+                skill=step.skill,
+                success=result.success,
+                duration_ms=round(duration_ms, 2),
+                message=result.message,
+            )
+
+            return result
+
+        except Exception:
+            duration_ms = (
+                time.perf_counter() - started
+            ) * 1000
+
+            logger.exception(
+                "step.failed",
+                run_id=self.run_id,
+                step_index=index,
+                skill=step.skill,
+                duration_ms=round(duration_ms, 2),
+            )
+
+            raise
+
+    async def _navigate(
+        self,
+        index: int,
+        step: PlanStep,
+        page: Page,
+    ) -> StepExecutionResult:
         url = step.params.get("url")
+
         if not url:
             return StepExecutionResult(
                 step_index=index,
@@ -77,21 +156,76 @@ class ActionExecutor:
                 message="Navigate step requires url param",
             )
 
-        response = await page.goto(str(url), wait_until="domcontentloaded")
-        if response is None or not response.ok:
-            status: Any = response.status if response else "no_response"
-            return StepExecutionResult(
-                step_index=index,
-                skill=step.skill,
-                success=False,
-                message=f"Navigation failed with status: {status}",
-            )
+        # ponytail: retry only navigation; retrying arbitrary browser
+        # actions can duplicate side effects.
+        for attempt in range(2):
+            try:
+                response = await page.goto(
+                    str(url),
+                    wait_until="domcontentloaded",
+                )
 
-        title = await page.title()
-        return StepExecutionResult(
-            step_index=index,
-            skill=step.skill,
-            success=True,
-            message=f"Navigated to {url}",
-            data={"title": title},
-        )
+                if response is None or not response.ok:
+                    status: Any = (
+                        response.status
+                        if response
+                        else "no_response"
+                    )
+
+                    if attempt == 0:
+                        logger.warning(
+                            "navigate.retry",
+                            run_id=self.run_id,
+                            step_index=index,
+                            url=str(url),
+                            status=status,
+                        )
+                        continue
+
+                    return StepExecutionResult(
+                        step_index=index,
+                        skill=step.skill,
+                        success=False,
+                        message=(
+                            "Navigation failed "
+                            f"with status: {status}"
+                        ),
+                    )
+
+                title = await page.title()
+
+                return StepExecutionResult(
+                    step_index=index,
+                    skill=step.skill,
+                    success=True,
+                    message=f"Navigated to {url}",
+                    data={"title": title},
+                )
+
+            except PlaywrightTimeoutError as exc:
+                if attempt == 0:
+                    logger.warning(
+                        "navigate.retry",
+                        run_id=self.run_id,
+                        step_index=index,
+                        url=str(url),
+                        reason="timeout",
+                    )
+                    continue
+
+                return StepExecutionResult(
+                    step_index=index,
+                    skill=step.skill,
+                    success=False,
+                    message=f"Navigation timeout: {exc}",
+                )
+
+            except PlaywrightError as exc:
+                return StepExecutionResult(
+                    step_index=index,
+                    skill=step.skill,
+                    success=False,
+                    message=f"Navigation error: {exc}",
+                )
+
+        raise AssertionError("unreachable")

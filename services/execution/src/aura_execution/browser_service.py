@@ -33,21 +33,29 @@ class BrowserExecutionService:
     def create_plan(self, request: str) -> ExecutionPlan:
         return self.planner.plan(request)
 
-    async def execute_sync(
-        self,
-        request: str,
-        *,
-        headed: bool | None = None,
-        plan_only: bool = False,
-    ) -> ExecutionPlan | PlanExecutionResult:
+    async def execute_sync( self, request: str, *, headed: bool | None = None, plan_only: bool = False, ) -> ExecutionPlan | PlanExecutionResult:
         settings = self._runtime_settings(headed)
         configure_logging(settings)
+
         plan = self.create_plan(request)
 
         if plan_only:
             return plan
 
-        return await self._run_plan(plan, settings)
+        task = self.task_store.create( request, headed=bool(headed), enqueue=False, )
+        self.task_store.update( task.id, status=TaskStatus.RUNNING, plan=plan, )
+        try:
+            result = await self._run_plan( plan, settings, run_id=task.id, )
+
+            status = ( TaskStatus.COMPLETED if result.success else TaskStatus.FAILED )
+
+            self.task_store.update( task.id, status=status, result=result, error=result.error, )
+
+            return result
+
+        except Exception as exc:
+            self.task_store.update( task.id, status=TaskStatus.FAILED, error=str(exc), )
+            raise
 
     async def enqueue(self, request: str, *, headed: bool = False) -> TaskRecord:
         task = self.task_store.create(request, headed=headed)
@@ -60,12 +68,9 @@ class BrowserExecutionService:
     def list_tasks(self, limit: int = 50) -> list[TaskRecord]:
         return self.task_store.list_tasks(limit=limit)
 
-    async def _run_plan(
-        self,
-        plan: ExecutionPlan,
-        settings: AuraSettings,
-    ) -> PlanExecutionResult:
-        executor = ActionExecutor(settings=settings)
+    async def _run_plan( self, plan: ExecutionPlan, settings: AuraSettings, *, run_id: str | None = None, ) -> PlanExecutionResult:
+        executor = ActionExecutor( settings=settings, run_id=run_id, )
+
         async with BrowserManager(settings).session() as browser:
             page = await browser.new_page()
             return await executor.execute_plan(plan, page)
@@ -102,7 +107,7 @@ class BrowserExecutionService:
 
         try:
             plan = self.create_plan(task.request)
-            result = await self._run_plan(plan, settings)
+            result = await self._run_plan( plan, settings, run_id=task.id, )
             status = TaskStatus.COMPLETED if result.success else TaskStatus.FAILED
             self.task_store.update(
                 task_id,

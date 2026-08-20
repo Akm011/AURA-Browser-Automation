@@ -52,6 +52,7 @@ source = { virtual = "." }
 [package.dev-dependencies]
 dev = [
     { name = "aura-browser" },
+    { name = "aura-execution" },
     { name = "aura-models" },
     { name = "aura-planner" },
     { name = "aura-skills" },
@@ -65,6 +66,7 @@ dev = [
 [package.metadata.requires-dev]
 dev = [
     { name = "aura-browser", editable = "packages/browser" },
+    { name = "aura-execution", editable = "services/execution" },
     { name = "aura-models", editable = "packages/models" },
     { name = "aura-planner", editable = "packages/planner" },
     { name = "aura-skills", editable = "packages/skills" },

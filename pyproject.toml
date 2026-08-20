@@ -25,6 +25,7 @@ dev = [
     "aura-models",
     "aura-planner",
     "aura-skills",
+    "aura-execution",
 ]
 
 [tool.uv.sources]

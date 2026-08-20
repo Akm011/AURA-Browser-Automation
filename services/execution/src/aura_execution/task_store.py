@@ -42,10 +42,11 @@ class TaskStore:
         self._tasks: dict[str, TaskRecord] = {}
         self._pending_queue: list[str] = []
 
-    def create(self, request: str, *, headed: bool = False) -> TaskRecord:
-        task = TaskRecord(request=request, headed=headed)
+    def create( self, request: str, *, headed: bool = False, enqueue: bool = True, ) -> TaskRecord:
+        task = TaskRecord( request=request, headed=headed, )
         self._tasks[task.id] = task
-        self._pending_queue.append(task.id)
+        if enqueue:
+            self._pending_queue.append(task.id)
         return task
 
     def get(self, task_id: str) -> TaskRecord | None:
