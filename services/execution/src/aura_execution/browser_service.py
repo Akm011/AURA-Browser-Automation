@@ -114,7 +114,7 @@ class BrowserExecutionService:
         request: str,
         *,
         headed: bool = False,
-        step_delay_seconds: float = 0.0,
+        step_delay_seconds: float | None = None,
     ) -> TaskRecord:
         task = self.task_store.create(
             request,

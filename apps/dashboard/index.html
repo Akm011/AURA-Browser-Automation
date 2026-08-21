@@ -126,6 +126,9 @@
       <textarea id="request" placeholder="Open https://example.com and click More information"></textarea>
       <div class="row">
         <label><input type="checkbox" id="headed"> Headed browser</label>
+        <label for="step-delay">Step delay (seconds)</label>
+        <input id="step-delay" type="number" min="0" step="0.1"
+          placeholder="Server default">
         <button type="button" id="plan-btn" class="secondary">Plan only</button>
         <button type="button" id="execute-btn">Execute now</button>
         <button type="button" id="queue-btn" class="secondary">Queue task</button>
@@ -228,9 +231,11 @@
     }
 
     function payload() {
+      const delayValue = document.getElementById("step-delay").value;
       return {
         request: requestEl.value.trim(),
         headed: document.getElementById("headed").checked,
+        step_delay_seconds: delayValue === "" ? null : Number(delayValue),
       };
     }
 
