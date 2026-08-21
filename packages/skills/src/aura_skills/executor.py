@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import time
 from typing import Any
 
@@ -59,11 +60,28 @@ class ActionExecutor:
                     error=result.message,
                 )
 
+            await self._pause_after_step(index, step)
+
         return PlanExecutionResult(
             success=True,
             plan=plan,
             step_results=step_results,
         )
+
+    async def _pause_after_step(self, index: int, step: PlanStep) -> None:
+        """Pause after each successful step when interactive debugging is enabled."""
+        delay_seconds = self.settings.browser_step_delay_seconds
+        if delay_seconds <= 0:
+            return
+
+        logger.info(
+            "step.pause",
+            run_id=self.run_id,
+            step_index=index,
+            skill=step.skill,
+            delay_seconds=delay_seconds,
+        )
+        await asyncio.sleep(delay_seconds)
 
     async def _execute_step(
         self,

@@ -23,6 +23,7 @@ class AuraSettings(BaseSettings):
     browser_headless: bool = True
     browser_timeout_ms: int = 30_000
     browser_slow_mo_ms: int = 0
+    browser_step_delay_seconds: float = Field(default=0.0, ge=0)
     browser_channel: str | None = None
 
     screenshots_dir: Path = Field(default=Path("artifacts/screenshots"))

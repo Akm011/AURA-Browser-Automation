@@ -14,18 +14,33 @@ from aura_planner import PlannerAgent
 from aura_skills import ActionExecutor
 
 
+def non_negative_seconds(value: str) -> float:
+    seconds = float(value)
+    if seconds < 0:
+        raise argparse.ArgumentTypeError("step delay must be zero or greater")
+    return seconds
+
+
 async def main() -> int:
     parser = argparse.ArgumentParser(
         description="AURA – plan and execute a natural-language browser task"
     )
     parser.add_argument("request", help='Task request, e.g. "Open https://example.com and click More information"')
     parser.add_argument("--headed", action="store_true", help="Run browser in headed mode")
+    parser.add_argument(
+        "--step-delay-seconds",
+        type=non_negative_seconds,
+        default=None,
+        help="Pause after every successful step; use with --headed to view browser actions",
+    )
     parser.add_argument("--plan-only", action="store_true", help="Only show the generated plan")
     args = parser.parse_args()
 
     settings = get_settings()
     if args.headed:
         settings.browser_headless = False
+    if args.step_delay_seconds is not None:
+        settings.browser_step_delay_seconds = args.step_delay_seconds
 
     configure_logging(settings)
 

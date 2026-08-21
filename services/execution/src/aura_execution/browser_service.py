@@ -55,9 +55,10 @@ class BrowserExecutionService:
         request: str,
         *,
         headed: bool | None = None,
+        step_delay_seconds: float | None = None,
         plan_only: bool = False,
     ) -> ExecutionPlan | PlanExecutionResult:
-        settings = self._runtime_settings(headed)
+        settings = self._runtime_settings(headed, step_delay_seconds)
         configure_logging(settings)
 
         plan = self.create_plan(request)
@@ -68,6 +69,7 @@ class BrowserExecutionService:
         task = self.task_store.create(
             request,
             headed=bool(headed),
+            step_delay_seconds=settings.browser_step_delay_seconds,
             enqueue=False,
         )
 
@@ -112,10 +114,12 @@ class BrowserExecutionService:
         request: str,
         *,
         headed: bool = False,
+        step_delay_seconds: float = 0.0,
     ) -> TaskRecord:
         task = self.task_store.create(
             request,
             headed=headed,
+            step_delay_seconds=step_delay_seconds,
         )
 
         self._ensure_worker()
@@ -159,6 +163,7 @@ class BrowserExecutionService:
     def _runtime_settings(
         self,
         headed: bool | None,
+        step_delay_seconds: float | None = None,
     ) -> AuraSettings:
         settings = self.settings.model_copy(
             deep=True
@@ -166,6 +171,8 @@ class BrowserExecutionService:
 
         if headed is not None:
             settings.browser_headless = not headed
+        if step_delay_seconds is not None:
+            settings.browser_step_delay_seconds = step_delay_seconds
 
         settings.ensure_directories()
 
@@ -209,7 +216,8 @@ class BrowserExecutionService:
         )
 
         settings = self._runtime_settings(
-            task.headed
+            task.headed,
+            task.step_delay_seconds,
         )
 
         configure_logging(settings)

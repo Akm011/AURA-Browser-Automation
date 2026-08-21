@@ -8,6 +8,7 @@ def test_settings_defaults() -> None:
     assert settings.app_version == "0.0.1"
     assert settings.browser_headless is True
     assert settings.browser_timeout_ms == 30_000
+    assert settings.browser_step_delay_seconds == 0
 
 
 def test_settings_ensure_directories(tmp_path) -> None:

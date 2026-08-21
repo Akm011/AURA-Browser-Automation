@@ -45,6 +45,7 @@ async def execute_task(body: ExecuteRequest):
     outcome = await service.execute_sync(
         body.request,
         headed=body.headed,
+        step_delay_seconds=body.step_delay_seconds,
         plan_only=body.plan_only,
     )
     return outcome.model_dump(mode="json")
@@ -53,7 +54,11 @@ async def execute_task(body: ExecuteRequest):
 @router.post("/tasks", response_model=TaskResponse, status_code=202)
 async def create_task(body: TaskCreateRequest) -> TaskResponse:
     service = get_execution_service()
-    task = await service.enqueue(body.request, headed=body.headed)
+    task = await service.enqueue(
+        body.request,
+        headed=body.headed,
+        step_delay_seconds=body.step_delay_seconds,
+    )
     return _to_task_response(task)
 
 
@@ -78,6 +83,7 @@ def _to_task_response(task: TaskRecord) -> TaskResponse:
         request=task.request,
         status=task.status.value,
         headed=task.headed,
+        step_delay_seconds=task.step_delay_seconds,
         plan=task.plan,
         result=task.result,
         error=task.error,

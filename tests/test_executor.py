@@ -1,6 +1,8 @@
 from typing import Any
+from unittest.mock import AsyncMock
 
 import pytest
+from aura_models.config import AuraSettings
 from aura_models.planning import ExecutionPlan, PlanStep
 from aura_skills import ActionExecutor, BrowserSkill, SkillRegistry, SkillResult
 from aura_skills.base import SkillContext
@@ -116,3 +118,27 @@ async def test_navigation_without_url_returns_a_clear_failure() -> None:
 
     assert result.success is False
     assert result.error == "Navigate step requires url param"
+
+
+@pytest.mark.asyncio
+async def test_executor_pauses_after_each_successful_step(monkeypatch: pytest.MonkeyPatch) -> None:
+    registry = SkillRegistry(skills=[])
+    registry.register(SuccessfulSkill())
+    sleep = AsyncMock()
+    monkeypatch.setattr("aura_skills.executor.asyncio.sleep", sleep)
+    plan = ExecutionPlan(
+        request="pause",
+        steps=[
+            PlanStep(skill="Successful", params={"value": "first"}),
+            PlanStep(skill="Successful", params={"value": "last"}),
+        ],
+    )
+    settings = AuraSettings(_env_file=None, browser_step_delay_seconds=1.5)
+
+    result = await ActionExecutor(registry=registry, settings=settings).execute_plan(
+        plan, FakePage()
+    )
+
+    assert result.success is True
+    assert sleep.await_count == 2
+    sleep.assert_awaited_with(1.5)

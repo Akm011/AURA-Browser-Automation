@@ -12,12 +12,14 @@ class PlanRequest(BaseModel):
 class ExecuteRequest(BaseModel):
     request: str = Field(..., min_length=3)
     headed: bool = False
+    step_delay_seconds: float | None = Field(default=None, ge=0)
     plan_only: bool = False
 
 
 class TaskCreateRequest(BaseModel):
     request: str = Field(..., min_length=3)
     headed: bool = False
+    step_delay_seconds: float = Field(default=0, ge=0)
 
 
 class HealthResponse(BaseModel):
@@ -35,6 +37,7 @@ class TaskResponse(BaseModel):
     request: str
     status: str
     headed: bool
+    step_delay_seconds: float
     plan: ExecutionPlan | None = None
     result: PlanExecutionResult | None = None
     error: str | None = None
