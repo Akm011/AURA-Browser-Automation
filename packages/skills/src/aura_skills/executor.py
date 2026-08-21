@@ -4,9 +4,6 @@ import time
 from typing import Any
 
 from aura_browser import get_logger
-from playwright.async_api import Error as PlaywrightError
-from playwright.async_api import Page, TimeoutError as PlaywrightTimeoutError
-
 from aura_models.config import AuraSettings
 from aura_models.planning import (
     ExecutionPlan,
@@ -14,10 +11,11 @@ from aura_models.planning import (
     PlanStep,
     StepExecutionResult,
 )
+from playwright.async_api import Page
+from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from aura_skills.base import SkillContext
 from aura_skills.registry import SkillRegistry, default_registry
-
 
 logger = get_logger(__name__)
 
@@ -27,12 +25,21 @@ class ActionExecutor:
 
     NAVIGATE_SKILL = "Navigate"
 
-    def __init__( self, registry: SkillRegistry | None = None, settings: AuraSettings | None = None, run_id: str | None = None, ) -> None:
+    def __init__(
+        self,
+        registry: SkillRegistry | None = None,
+        settings: AuraSettings | None = None,
+        run_id: str | None = None,
+    ) -> None:
         self.registry = registry or default_registry()
         self.settings = settings or AuraSettings()
         self.run_id = run_id
 
-    async def execute_plan( self, plan: ExecutionPlan, page: Page, ) -> PlanExecutionResult:
+    async def execute_plan(
+        self,
+        plan: ExecutionPlan,
+        page: Page,
+    ) -> PlanExecutionResult:
         step_results: list[StepExecutionResult] = []
 
         for index, step in enumerate(plan.steps):
@@ -218,14 +225,6 @@ class ActionExecutor:
                     skill=step.skill,
                     success=False,
                     message=f"Navigation timeout: {exc}",
-                )
-
-            except PlaywrightError as exc:
-                return StepExecutionResult(
-                    step_index=index,
-                    skill=step.skill,
-                    success=False,
-                    message=f"Navigation error: {exc}",
                 )
 
         raise AssertionError("unreachable")
