@@ -2,7 +2,8 @@ from aura_models.config import AuraSettings
 
 
 def test_settings_defaults() -> None:
-    settings = AuraSettings()
+    # Do not allow a developer's local .env file to change the expected defaults.
+    settings = AuraSettings(_env_file=None)
     assert settings.app_name == "AURA Browser Intelligence Core"
     assert settings.app_version == "0.0.1"
     assert settings.browser_headless is True

@@ -102,7 +102,10 @@ class IntentParser:
         if search_match:
             entities["search_query"] = search_match.group(1).strip().strip("'\"")
 
-        menu_match = re.search(r"(?:navigate to|go to|open)\s+(.+?)\s+menu", text, re.I)
+        # Do not include "open" here: in requests such as "Open <URL> and
+        # navigate to Reports menu", matching from the first word would absorb
+        # the URL and every intervening action.
+        menu_match = re.search(r"(?:navigate to|go to)\s+(.+?)\s+menu", text, re.I)
         if menu_match:
             entities["menu_path"] = menu_match.group(1).strip()
 
