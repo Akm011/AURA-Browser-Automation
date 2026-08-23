@@ -5,6 +5,7 @@ import re
 from aura_models.planning import ParsedIntent
 
 URL_PATTERN = re.compile(r"https?://[^\s,]+", re.I)
+MARKDOWN_LINK_PATTERN = re.compile(r"\[[^\]]+\]\((https?://[^\s)]+)\)", re.I)
 QUOTED_TEXT = re.compile(r"['\"]([^'\"]+)['\"]")
 WAIT_PATTERN = re.compile(
     r"wait(?:\s+for)?\s+(\d+(?:\.\d+)?)\s*(seconds?|secs?|s|minutes?|mins?|m)\b",
@@ -33,8 +34,12 @@ class IntentParser:
 
     def parse(self, request: str) -> ParsedIntent:
         normalized = request.strip()
-        url_match = URL_PATTERN.search(normalized)
-        target_url = url_match.group(0).rstrip(".,)") if url_match else None
+        markdown_link_match = MARKDOWN_LINK_PATTERN.search(normalized)
+        url_match = markdown_link_match or URL_PATTERN.search(normalized)
+        if markdown_link_match:
+            target_url = markdown_link_match.group(1)
+        else:
+            target_url = url_match.group(0).rstrip(".,)") if url_match else None
 
         actions = self._detect_actions(normalized)
         entities = self._extract_entities(normalized)
@@ -85,7 +90,9 @@ class IntentParser:
 
         wait_match = WAIT_PATTERN.search(text)
         if wait_match:
-            entities["wait_seconds"] = str(self._parse_duration(wait_match.group(1), wait_match.group(2)))
+            entities["wait_seconds"] = str(
+                self._parse_duration(wait_match.group(1), wait_match.group(2))
+            )
 
         click_match = re.search(
             r"click(?: on)?\s+(.+?)(?:\s+and\s+wait\b|\s+wait\b|\.\s|,|$)",

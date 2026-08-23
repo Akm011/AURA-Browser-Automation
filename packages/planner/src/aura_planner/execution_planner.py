@@ -8,6 +8,12 @@ class ExecutionPlanner:
     """Maps parsed intent to an ordered list of browser skill steps."""
 
     def plan(self, intent: ParsedIntent) -> ExecutionPlan:
+        if intent.proposed_steps:
+            return ExecutionPlan(
+                request=intent.raw_request,
+                steps=[PlanStep.model_validate(step) for step in intent.proposed_steps],
+            )
+
         steps: list[PlanStep] = []
 
         if intent.target_url:
@@ -37,6 +43,8 @@ class ExecutionPlanner:
 
     def _steps_for_action(self, action: str, intent: ParsedIntent) -> list[PlanStep]:
         if action == "login":
+            if not intent.credentials_provided:
+                return []
             return [
                 PlanStep(
                     skill="FindLoginForm",
@@ -47,13 +55,16 @@ class ExecutionPlanner:
                     skill="FillInput",
                     params={
                         "selector": "input[type='email'], input[type='text']",
-                        "value": intent.entities.get("username", "demo@example.com"),
+                        "value": intent.entities["username"],
                     },
                     description="Fill username or email",
                 ),
                 PlanStep(
                     skill="FillInput",
-                    params={"selector": "input[type='password']", "value": intent.entities.get("password", "demo-password")},
+                    params={
+                        "selector": "input[type='password']",
+                        "value": intent.entities["password"],
+                    },
                     description="Fill password",
                 ),
                 PlanStep(

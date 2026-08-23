@@ -13,6 +13,11 @@ class ParsedIntent(BaseModel):
     goal: str = ""
     actions: list[str] = Field(default_factory=list)
     entities: dict[str, str] = Field(default_factory=dict)
+    proposed_steps: list[dict[str, Any]] = Field(default_factory=list)
+    credentials_provided: bool = False
+    correction_suggestions: list[str] = Field(default_factory=list)
+    needs_clarification: bool = False
+    clarification_reason: str | None = None
 
 
 class PlanStep(BaseModel):

@@ -72,6 +72,14 @@ Options:
 uv run pytest
 ```
 
+### OpenAI request analysis
+
+Set `AURA_OPENAI_API_KEY` to enable `gpt-5.6-terra` as the first stage of planning.
+The model turns each incoming browser request into structured intent before the execution
+planner runs. You can override the defaults with `AURA_OPENAI_REQUEST_ANALYZER_MODEL` and
+`AURA_OPENAI_REQUEST_ANALYZER_REASONING_EFFORT`. Without an API key, AURA uses the existing
+deterministic parser as an outage-safe fallback.
+
 ## Core browser skills (planned)
 
 | Skill | Description |

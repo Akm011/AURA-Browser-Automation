@@ -20,6 +20,10 @@ class AuraSettings(BaseSettings):
     log_json: bool = False
     cors_origins: list[str] = Field(default=["http://localhost:8000", "http://127.0.0.1:8000"])
 
+    openai_api_key: str | None = None
+    openai_request_analyzer_model: str = "gpt-5.6-terra"
+    openai_request_analyzer_reasoning_effort: str = "medium"
+
     browser_headless: bool = True
     browser_timeout_ms: int = 30_000
     browser_slow_mo_ms: int = 0

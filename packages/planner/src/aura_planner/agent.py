@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from typing import TypedDict
 
+from aura_models.config import AuraSettings, get_settings
+from aura_models.planning import ExecutionPlan, ParsedIntent
 from langgraph.graph import END, START, StateGraph
 
-from aura_models.planning import ExecutionPlan, ParsedIntent
 from aura_planner.execution_planner import ExecutionPlanner
 from aura_planner.intent import IntentParser
+from aura_planner.request_analyzer import OpenAIRequestAnalyzer
 
 
 class PlannerState(TypedDict):
@@ -23,8 +25,15 @@ class PlannerAgent:
         self,
         intent_parser: IntentParser | None = None,
         execution_planner: ExecutionPlanner | None = None,
+        request_analyzer: OpenAIRequestAnalyzer | None = None,
+        settings: AuraSettings | None = None,
     ) -> None:
         self.intent_parser = intent_parser or IntentParser()
+        settings = settings or get_settings()
+        self.request_analyzer = request_analyzer or OpenAIRequestAnalyzer(
+            settings=settings,
+            fallback_parser=self.intent_parser,
+        )
         self.execution_planner = execution_planner or ExecutionPlanner()
         self._graph = self._build_graph()
 
@@ -55,7 +64,7 @@ class PlannerAgent:
 
     def _parse_intent(self, state: PlannerState) -> PlannerState:
         try:
-            intent = self.intent_parser.parse(state["request"])
+            intent = self.request_analyzer.analyze(state["request"])
             return {**state, "intent": intent, "error": None}
         except Exception as exc:
             return {**state, "intent": None, "error": str(exc)}

@@ -7,6 +7,7 @@ dependencies = [
     "aura-models",
     "aura-skills",
     "langgraph>=0.2",
+    "openai>=1.0",
 ]
 
 [tool.uv.sources]

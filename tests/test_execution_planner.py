@@ -23,6 +23,8 @@ def test_search_request_produces_find_fill_and_submit_steps() -> None:
 
 def test_login_request_builds_complete_login_flow() -> None:
     intent = IntentParser().parse("Open https://example.com/login and login")
+    intent.entities.update({"username": "student", "password": "Password123"})
+    intent.credentials_provided = True
     plan = ExecutionPlanner().plan(intent)
 
     assert [step.skill for step in plan.steps] == [
