@@ -29,7 +29,7 @@ async def health() -> HealthResponse:
 @router.get("/skills", response_model=SkillsResponse)
 async def list_skills() -> SkillsResponse:
     service = get_execution_service()
-    return SkillsResponse(skills=service.list_skills())
+    return SkillsResponse(skills=service.list_skills(), tools=service.list_tools())
 
 
 @router.post("/plan")
@@ -79,6 +79,14 @@ async def get_task(task_id: str) -> TaskResponse:
     return _to_task_response(task)
 
 
+@router.get("/tasks/{task_id}/timeline")
+async def get_task_timeline(task_id: str) -> list[dict[str, str]]:
+    task = get_execution_service().get_task(task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return task.timeline
+
+
 def _to_task_response(task: TaskRecord) -> TaskResponse:
     return TaskResponse(
         id=task.id,
@@ -90,6 +98,7 @@ def _to_task_response(task: TaskRecord) -> TaskResponse:
         plan=task.plan,
         result=task.result,
         error=task.error,
+        timeline=task.timeline,
         created_at=task.created_at.isoformat(),
         updated_at=task.updated_at.isoformat(),
     )

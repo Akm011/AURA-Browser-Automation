@@ -183,6 +183,11 @@ class OpenAIRequestAnalyzer:
             if isinstance(value, (str, int, float))
         }
         proposed_steps = self._validated_steps(payload.get("planner_steps", []))
+        explicit_click_target = explicit_intent.entities.get("click_target")
+        if explicit_click_target:
+            for step in proposed_steps:
+                if step["skill"] == "ClickElement" and step["params"].get("text"):
+                    step["params"]["text"] = explicit_click_target
         if not proposed_steps and not bool(payload.get("needs_clarification")):
             raise ValueError(
                 "OpenAI request analysis did not return an executable planner_steps list"

@@ -107,7 +107,7 @@
 <body>
   <header>
     <h1>AURA Browser Intelligence</h1>
-    <p>Week 3 dashboard – submit and monitor browser tasks</p>
+    <p>Browser intelligence runs, tools, and execution timeline</p>
   </header>
   <main>
     <section class="card">
@@ -154,11 +154,12 @@
             <th>ID</th>
             <th>Request</th>
             <th>Status</th>
+            <th>Timeline</th>
             <th>Updated</th>
           </tr>
         </thead>
         <tbody id="tasks">
-          <tr><td colspan="4" class="muted">No tasks yet.</td></tr>
+          <tr><td colspan="5" class="muted">No tasks yet.</td></tr>
         </tbody>
       </table>
     </section>
@@ -211,7 +212,7 @@
       const tasks = await api("/tasks?limit=10");
       const tbody = document.getElementById("tasks");
       if (!tasks.length) {
-        tbody.innerHTML = '<tr><td colspan="4" class="muted">No tasks yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="muted">No tasks yet.</td></tr>';
         return;
       }
       tbody.innerHTML = tasks.map((task) => `
@@ -219,6 +220,7 @@
           <td><code>${task.id.slice(0, 8)}…</code></td>
           <td>${escapeHtml(task.request)}</td>
           <td><span class="status-pill ${statusClass(task.status)}">${task.status}</span></td>
+          <td class="muted">${(task.timeline || []).map((event) => escapeHtml(event.event)).join(" → ") || "—"}</td>
           <td class="muted">${task.updated_at}</td>
         </tr>
       `).join("");

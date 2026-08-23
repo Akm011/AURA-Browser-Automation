@@ -9,6 +9,7 @@ from langgraph.graph import END, START, StateGraph
 from aura_planner.execution_planner import ExecutionPlanner
 from aura_planner.intent import IntentParser
 from aura_planner.request_analyzer import OpenAIRequestAnalyzer
+from aura_planner.validation import PlanValidator
 
 
 class PlannerState(TypedDict):
@@ -25,6 +26,7 @@ class PlannerAgent:
         self,
         intent_parser: IntentParser | None = None,
         execution_planner: ExecutionPlanner | None = None,
+        plan_validator: PlanValidator | None = None,
         request_analyzer: OpenAIRequestAnalyzer | None = None,
         settings: AuraSettings | None = None,
     ) -> None:
@@ -35,6 +37,7 @@ class PlannerAgent:
             fallback_parser=self.intent_parser,
         )
         self.execution_planner = execution_planner or ExecutionPlanner()
+        self.plan_validator = plan_validator or PlanValidator()
         self._graph = self._build_graph()
 
     def _build_graph(self):
@@ -75,7 +78,7 @@ class PlannerAgent:
             return {**state, "plan": None, "error": state.get("error") or "Intent parsing failed"}
 
         try:
-            plan = self.execution_planner.plan(intent)
+            plan = self.plan_validator.validate(self.execution_planner.plan(intent))
             if not plan.steps:
                 return {**state, "plan": None, "error": "No executable steps generated"}
             return {**state, "plan": plan, "error": None}

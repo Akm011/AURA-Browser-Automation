@@ -34,6 +34,7 @@ class TaskRecord(BaseModel):
     plan: ExecutionPlan | None = None
     result: PlanExecutionResult | None = None
     error: str | None = None
+    timeline: list[dict[str, str]] = Field(default_factory=list)
 
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC)
@@ -78,11 +79,20 @@ class TaskStore:
         )
 
         self._tasks[task.id] = task
+        task = self.add_event(task.id, "created", "Task created")
 
         if enqueue:
             self._pending_queue.append(task.id)
 
         return task
+
+    def add_event(self, task_id: str, event: str, message: str) -> TaskRecord:
+        task = self._tasks[task_id]
+        timeline = [
+            *task.timeline,
+            {"at": datetime.now(UTC).isoformat(), "event": event, "message": message},
+        ]
+        return self.update(task_id, timeline=timeline)
 
     def get(
         self,

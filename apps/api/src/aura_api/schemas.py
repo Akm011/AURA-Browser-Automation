@@ -32,6 +32,7 @@ class HealthResponse(BaseModel):
 
 class SkillsResponse(BaseModel):
     skills: list[str]
+    tools: list[dict] = Field(default_factory=list)
 
 
 class TaskResponse(BaseModel):
@@ -44,5 +45,6 @@ class TaskResponse(BaseModel):
     plan: ExecutionPlan | None = None
     result: PlanExecutionResult | None = None
     error: str | None = None
+    timeline: list[dict[str, str]] = Field(default_factory=list)
     created_at: str
     updated_at: str

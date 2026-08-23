@@ -22,6 +22,14 @@ class SkillRegistry:
     def register(self, skill: BrowserSkill) -> None:
         self._skills[skill.name] = skill
 
+    def tool_definitions(self) -> list[dict[str, object]]:
+        """MCP-ready descriptions; an MCP server can expose these unchanged."""
+        return [
+            {"name": name, "description": f"Run AURA browser skill {name}.",
+             "inputSchema": {"type": "object", "additionalProperties": True}}
+            for name in self.list_names()
+        ]
+
 
 def default_registry() -> SkillRegistry:
     return SkillRegistry()

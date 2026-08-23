@@ -45,6 +45,16 @@ class BrowserExecutionService:
             ]
         )
 
+    def list_tools(self) -> list[dict[str, object]]:
+        tools = ActionExecutor().registry.tool_definitions()
+        return [
+            *tools,
+            {"name": "Navigate", "description": "Open a URL.",
+             "inputSchema": {"type": "object", "required": ["url"]}},
+            {"name": "Wait", "description": "Wait before continuing.",
+             "inputSchema": {"type": "object", "required": ["seconds"]}},
+        ]
+
     def create_plan(
         self,
         request: str,
@@ -82,6 +92,7 @@ class BrowserExecutionService:
             status=TaskStatus.RUNNING,
             plan=plan,
         )
+        self.task_store.add_event(task.id, "planned", f"Prepared {len(plan.steps)} steps")
 
         try:
             result = await self._run_plan(
@@ -103,6 +114,7 @@ class BrowserExecutionService:
                 result=result,
                 error=result.error,
             )
+            self.task_store.add_event(task.id, status, result.error or "Execution completed")
 
             return result
 
@@ -254,6 +266,7 @@ class BrowserExecutionService:
             task_id,
             status=TaskStatus.RUNNING,
         )
+        self.task_store.add_event(task_id, "running", "Execution started")
 
         settings = self._runtime_settings(
             task.headed,
@@ -287,6 +300,7 @@ class BrowserExecutionService:
                 result=result,
                 error=result.error,
             )
+            self.task_store.add_event(task_id, status, result.error or "Execution completed")
 
         except Exception as exc:
             self.task_store.update(

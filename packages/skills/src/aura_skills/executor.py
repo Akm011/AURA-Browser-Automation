@@ -4,7 +4,7 @@ import asyncio
 import time
 from typing import Any
 
-from aura_browser import get_logger
+from aura_browser import DOMAnalyzer, NavigationGraphBuilder, get_logger
 from aura_models.config import AuraSettings
 from aura_models.planning import (
     ExecutionPlan,
@@ -218,13 +218,23 @@ class ActionExecutor:
                     )
 
                 title = await page.title()
+                summary = (
+                    await DOMAnalyzer().summarize(page)
+                    if hasattr(page, "evaluate")
+                    else None
+                )
 
                 return StepExecutionResult(
                     step_index=index,
                     skill=step.skill,
                     success=True,
                     message=f"Navigated to {url}",
-                    data={"title": title},
+                    data={
+                        "title": title,
+                        **({"page_summary": summary,
+                            "navigation_graph": NavigationGraphBuilder.build(summary)}
+                           if summary else {}),
+                    },
                 )
 
             except PlaywrightTimeoutError as exc:
