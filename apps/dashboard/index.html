@@ -126,6 +126,8 @@
       <textarea id="request" placeholder="Open https://example.com and click More information"></textarea>
       <div class="row">
         <label><input type="checkbox" id="headed"> Headed browser</label>
+        <label for="session-id">Session ID</label>
+        <input id="session-id" placeholder="Optional: reuse login">
         <label for="step-delay">Step delay (seconds)</label>
         <input id="step-delay" type="number" min="0" step="0.1"
           placeholder="Server default">
@@ -235,6 +237,7 @@
       return {
         request: requestEl.value.trim(),
         headed: document.getElementById("headed").checked,
+        session_id: document.getElementById("session-id").value.trim() || null,
         step_delay_seconds: delayValue === "" ? null : Number(delayValue),
       };
     }

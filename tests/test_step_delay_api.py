@@ -21,3 +21,13 @@ def test_api_request_accepts_an_explicit_step_delay() -> None:
     )
 
     assert request.step_delay_seconds == 2.5
+
+
+def test_api_request_accepts_a_reusable_session_id() -> None:
+    request = ExecuteRequest(
+        request="Open https://example.com",
+        headed=True,
+        session_id="demo-login",
+    )
+
+    assert request.session_id == "demo-login"

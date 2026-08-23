@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AURA v0.2 - Month 2 Final</title>
+<style>
+body{font-family:Segoe UI,Arial,sans-serif;max-width:1280px;margin:auto;padding:30px;line-height:1.7;background:#f5f7fb;color:#222}
+h1,h2,h3{color:#143d6b}
+.card{background:#fff;border:1px solid #d9e2ec;border-radius:10px;padding:18px;margin:18px 0}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ccd6e0;padding:10px;vertical-align:top}
+th{background:#eef5ff}
+pre{background:#f4f4f4;padding:10px;border-radius:6px}
+</style>
+</head>
+<body>
+
+<h1>AURA v0.2 – Browser Intelligence Engine</h1>
+<h2>Month 2 Engineering Blueprint</h2>
+
+<div class="card">
+<h2>Release Goal</h2>
+<p>Upgrade AURA from a browser execution framework into an <b>AI-powered Browser Intelligence Engine</b>. The platform should execute browser tasks on previously unseen websites using reusable browser skills and AI planning rather than website-specific automation.</p>
+</div>
+
+<div class="card">
+<h2>Business Problem</h2>
+<p>Traditional automation assumes the developer already knows the website. Modern enterprises constantly introduce new portals, redesign interfaces and change navigation. Engineers spend significant effort updating brittle automation.</p>
+<p><b>Goal:</b> Make AURA capable of understanding any website, planning browser actions and executing workflows with minimal hardcoding.</p>
+</div>
+
+<div class="card">
+<h2>New Capabilities (v0.2)</h2>
+<ul>
+<li>Website discovery</li>
+<li>DOM understanding</li>
+<li>Navigation graph generation</li>
+<li>AI task planner</li>
+<li>Browser Skill execution</li>
+<li>Screenshot capture</li>
+<li>Session persistence</li>
+<li>Human-in-the-loop approval for sensitive actions</li>
+</ul>
+</div>
+
+<div class="card">
+<h2>Architecture</h2>
+<pre>
+User Request
+      │
+ Intent Parser
+      │
+ Planner Agent (LangGraph)
+      │
+ Website Analyzer
+      │
+ Navigation Planner
+      │
+ Browser Skill Engine
+      │
+ Playwright
+      │
+ Browser Session
+      │
+ Execution Logs + Screenshots
+</pre>
+</div>
+
+<div class="card">
+<h2>Technology Stack</h2>
+<p>Playwright • Browser Use • LangGraph • LiteLLM • FastAPI • MCP (intro) • Pydantic • AsyncIO • LangSmith (basic tracing) • Docker</p>
+</div>
+
+<div class="card">
+<h2>Weekly Learning & Weekend Sprints</h2>
+<table>
+<tr><th>Week</th><th>Learning (Mon–Fri)</th><th>Weekend Sprint</th></tr>
+
+<tr>
+<td>Week 5</td>
+<td>
+<ul>
+<li>Advanced Playwright</li>
+<li>Browser contexts & sessions</li>
+<li>Browser Use fundamentals</li>
+<li>Async browser execution</li>
+<li><b>System Design:</b> Browser Engine</li>
+<li><b>DSA:</b> Sliding Window</li>
+</ul>
+</td>
+<td>
+<ol>
+<li>Refactor Browser Engine</li>
+<li>Persistent session manager</li>
+<li>Cookie handling</li>
+<li>Screenshot service</li>
+<li>Release v0.2.1</li>
+</ol>
+</td>
+</tr>
+
+<tr>
+<td>Week 6</td>
+<td>
+<ul>
+<li>DOM parsing</li>
+<li>Semantic HTML</li>
+<li>Accessibility roles</li>
+<li>Navigation strategies</li>
+<li><b>System Design:</b> Generic Navigation Engine</li>
+<li><b>DSA:</b> Monotonic Stack</li>
+</ul>
+</td>
+<td>
+<ol>
+<li>DOM Analyzer</li>
+<li>Navigation Graph Builder</li>
+<li>Generic locator strategy</li>
+<li>Page summarizer</li>
+<li>Release v0.2.2</li>
+</ol>
+</td>
+</tr>
+
+<tr>
+<td>Week 7</td>
+<td>
+<ul>
+<li>Prompt engineering</li>
+<li>Structured outputs</li>
+<li>LiteLLM integration</li>
+<li>Planner refinement</li>
+<li><b>System Design:</b> AI Planning Engine</li>
+<li><b>DSA:</b> Trees (DFS/BFS)</li>
+</ul>
+</td>
+<td>
+<ol>
+<li>AI Planner</li>
+<li>Task decomposition</li>
+<li>Skill selection engine</li>
+<li>Execution validation</li>
+<li>Release v0.2.3</li>
+</ol>
+</td>
+</tr>
+
+<tr>
+<td>Week 8</td>
+<td>
+<ul>
+<li>MCP introduction</li>
+<li>Tool interfaces</li>
+<li>Tracing with LangSmith</li>
+<li>Retry patterns</li>
+<li><b>System Design:</b> Agent Tool Architecture</li>
+<li><b>DSA:</b> Graph Traversal</li>
+</ul>
+</td>
+<td>
+<ol>
+<li>MCP-ready tool registry</li>
+<li>Execution timeline</li>
+<li>Interactive dashboard</li>
+<li>Documentation</li>
+<li>Demo video</li>
+<li>Release v0.2.0</li>
+</ol>
+</td>
+</tr>
+
+</table>
+</div>
+
+<div class="card">
+<h2>End-of-Month Demonstration</h2>
+<p>Show AURA working on <b>three unrelated websites</b> without writing website-specific code.</p>
+<ul>
+<li>User: "Open the website, login, navigate to the reports section and download the latest PDF."</li>
+<li>AURA builds an execution plan.</li>
+<li>Analyzes the page structure.</li>
+<li>Selects reusable browser skills.</li>
+<li>Executes using Playwright.</li>
+<li>Produces screenshots, logs and execution summary.</li>
+</ul>
+<p>The objective is not perfect autonomy yet—it is to demonstrate that the architecture is generic and reusable.</p>
+</div>
+
+<div class="card">
+<h2>Deliverables</h2>
+<ul>
+<li>Generic Browser Intelligence Engine</li>
+<li>Navigation Graph Builder</li>
+<li>AI Planner</li>
+<li>Browser Skill Library (12+ skills)</li>
+<li>Persistent Session Manager</li>
+<li>Execution Dashboard</li>
+<li>Docker deployment</li>
+<li>40+ GitHub commits</li>
+<li>Architecture documentation</li>
+<li>Resume & LinkedIn update</li>
+</ul>
+</div>
+
+<div class="card">
+<h2>Resume Bullet</h2>
+<p><b>AURA v0.2 – Browser Intelligence Engine</b></p>
+<p>Engineered an AI-powered Browser Intelligence Engine using Playwright, LangGraph and Browser Use that interprets natural-language tasks, analyzes arbitrary web pages, generates execution plans and performs reusable browser workflows without website-specific automation logic.</p>
+</div>
+
+</body>
+</html>

@@ -43,3 +43,4 @@ class PlanExecutionResult(BaseModel):
     plan: ExecutionPlan
     step_results: list[StepExecutionResult] = Field(default_factory=list)
     error: str | None = None
+    screenshot_path: str | None = None

@@ -12,6 +12,7 @@ class PlanRequest(BaseModel):
 class ExecuteRequest(BaseModel):
     request: str = Field(..., min_length=3)
     headed: bool = False
+    session_id: str | None = Field(default=None, min_length=1, max_length=100)
     step_delay_seconds: float | None = Field(default=None, ge=0)
     plan_only: bool = False
 
@@ -19,6 +20,7 @@ class ExecuteRequest(BaseModel):
 class TaskCreateRequest(BaseModel):
     request: str = Field(..., min_length=3)
     headed: bool = False
+    session_id: str | None = Field(default=None, min_length=1, max_length=100)
     step_delay_seconds: float | None = Field(default=None, ge=0)
 
 
@@ -37,6 +39,7 @@ class TaskResponse(BaseModel):
     request: str
     status: str
     headed: bool
+    session_id: str | None
     step_delay_seconds: float | None
     plan: ExecutionPlan | None = None
     result: PlanExecutionResult | None = None

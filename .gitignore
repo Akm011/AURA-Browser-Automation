@@ -39,3 +39,6 @@ downloads/
 .coverage
 htmlcov/
 .pytest_cache/
+
+# Artifacts
+artifacts/

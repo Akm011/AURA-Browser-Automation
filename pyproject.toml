@@ -1,6 +1,6 @@
 [project]
 name = "aura"
-version = "0.0.1"
+version = "0.2.1"
 description = "AURA v0.1 – Enterprise Browser Intelligence Platform"
 readme = "README.md"
 requires-python = ">=3.11"

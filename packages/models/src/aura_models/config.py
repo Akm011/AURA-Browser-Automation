@@ -15,7 +15,7 @@ class AuraSettings(BaseSettings):
     )
 
     app_name: str = "AURA Browser Intelligence Core"
-    app_version: str = "0.0.1"
+    app_version: str = "0.2.1"
     log_level: str = "INFO"
     log_json: bool = False
     cors_origins: list[str] = Field(default=["http://localhost:8000", "http://127.0.0.1:8000"])
@@ -27,11 +27,13 @@ class AuraSettings(BaseSettings):
     browser_channel: str | None = None
 
     screenshots_dir: Path = Field(default=Path("artifacts/screenshots"))
+    sessions_dir: Path = Field(default=Path("artifacts/sessions"))
     downloads_dir: Path = Field(default=Path("artifacts/downloads"))
     logs_dir: Path = Field(default=Path("logs"))
 
     def ensure_directories(self) -> None:
         self.screenshots_dir.mkdir(parents=True, exist_ok=True)
+        self.sessions_dir.mkdir(parents=True, exist_ok=True)
         self.downloads_dir.mkdir(parents=True, exist_ok=True)
         self.logs_dir.mkdir(parents=True, exist_ok=True)
 

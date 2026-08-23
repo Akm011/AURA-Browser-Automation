@@ -26,6 +26,7 @@ class TaskRecord(BaseModel):
 
     request: str
     headed: bool = False
+    session_id: str | None = None
     step_delay_seconds: float | None = None
 
     status: TaskStatus = TaskStatus.PENDING
@@ -65,12 +66,14 @@ class TaskStore:
         request: str,
         *,
         headed: bool = False,
+        session_id: str | None = None,
         step_delay_seconds: float | None = None,
         enqueue: bool = True,
     ) -> TaskRecord:
         task = TaskRecord(
             request=request,
             headed=headed,
+            session_id=session_id,
             step_delay_seconds=step_delay_seconds,
         )
 

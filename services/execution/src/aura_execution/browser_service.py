@@ -7,6 +7,7 @@ from aura_models.config import AuraSettings, get_settings
 from aura_models.planning import (
     ExecutionPlan,
     PlanExecutionResult,
+    PlanStep,
 )
 from aura_planner import PlannerAgent
 from aura_skills import ActionExecutor
@@ -55,6 +56,7 @@ class BrowserExecutionService:
         request: str,
         *,
         headed: bool | None = None,
+        session_id: str | None = None,
         step_delay_seconds: float | None = None,
         plan_only: bool = False,
     ) -> ExecutionPlan | PlanExecutionResult:
@@ -69,9 +71,11 @@ class BrowserExecutionService:
         task = self.task_store.create(
             request,
             headed=bool(headed),
+            session_id=session_id,
             step_delay_seconds=settings.browser_step_delay_seconds,
             enqueue=False,
         )
+        task = self._ensure_session_id(task)
 
         self.task_store.update(
             task.id,
@@ -84,6 +88,7 @@ class BrowserExecutionService:
                 plan,
                 settings,
                 run_id=task.id,
+                session_id=task.session_id,
             )
 
             status = (
@@ -114,13 +119,16 @@ class BrowserExecutionService:
         request: str,
         *,
         headed: bool = False,
+        session_id: str | None = None,
         step_delay_seconds: float | None = None,
     ) -> TaskRecord:
         task = self.task_store.create(
             request,
             headed=headed,
+            session_id=session_id,
             step_delay_seconds=step_delay_seconds,
         )
+        task = self._ensure_session_id(task)
 
         self._ensure_worker()
 
@@ -146,19 +154,51 @@ class BrowserExecutionService:
         settings: AuraSettings,
         *,
         run_id: str | None = None,
+        session_id: str | None = None,
     ) -> PlanExecutionResult:
         executor = ActionExecutor(
             settings=settings,
             run_id=run_id,
         )
 
-        async with BrowserManager(settings).session() as browser:
+        async with BrowserManager(settings, session_id=session_id).session() as browser:
             page = await browser.new_page()
-
-            return await executor.execute_plan(
-                plan,
+            execution_plan = self._resume_plan(plan, browser.session_memory().get("last_url"))
+            result = await executor.execute_plan(
+                execution_plan,
                 page,
             )
+            if session_id and page.url != "about:blank":
+                browser.record_session_completion(
+                    url=page.url,
+                    skills=[step.skill for step in execution_plan.steps],
+                    success=result.success,
+                )
+            result.screenshot_path = await browser.capture_screenshot(page, label="final")
+            return result
+
+    @staticmethod
+    def _resume_plan(plan: ExecutionPlan, last_url: object) -> ExecutionPlan:
+        if not isinstance(last_url, str) or not last_url:
+            return plan
+        if any(step.skill == ActionExecutor.NAVIGATE_SKILL for step in plan.steps):
+            return plan
+
+        resumed = plan.model_copy(deep=True)
+        resumed.steps.insert(
+            0,
+            PlanStep(
+                skill=ActionExecutor.NAVIGATE_SKILL,
+                params={"url": last_url},
+                description=f"Resume session at {last_url}",
+            ),
+        )
+        return resumed
+
+    def _ensure_session_id(self, task: TaskRecord) -> TaskRecord:
+        if task.session_id:
+            return task
+        return self.task_store.update(task.id, session_id=task.id)
 
     def _runtime_settings(
         self,
@@ -231,6 +271,7 @@ class BrowserExecutionService:
                 plan,
                 settings,
                 run_id=task.id,
+                session_id=task.session_id,
             )
 
             status = (

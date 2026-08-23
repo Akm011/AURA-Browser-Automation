@@ -45,6 +45,7 @@ async def execute_task(body: ExecuteRequest):
     outcome = await service.execute_sync(
         body.request,
         headed=body.headed,
+        session_id=body.session_id,
         step_delay_seconds=body.step_delay_seconds,
         plan_only=body.plan_only,
     )
@@ -57,6 +58,7 @@ async def create_task(body: TaskCreateRequest) -> TaskResponse:
     task = await service.enqueue(
         body.request,
         headed=body.headed,
+        session_id=body.session_id,
         step_delay_seconds=body.step_delay_seconds,
     )
     return _to_task_response(task)
@@ -83,6 +85,7 @@ def _to_task_response(task: TaskRecord) -> TaskResponse:
         request=task.request,
         status=task.status.value,
         headed=task.headed,
+        session_id=task.session_id,
         step_delay_seconds=task.step_delay_seconds,
         plan=task.plan,
         result=task.result,
