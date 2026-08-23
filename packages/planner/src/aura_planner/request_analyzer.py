@@ -24,6 +24,7 @@ planner_steps must be a complete, ordered plan using only these executable skill
 ({url}), ClickElement ({text} or {selector}), FindLoginForm ({}), FillInput ({selector, value}),
 FindSearchBar ({}), SelectDropdown ({value}), NavigateMenu ({path}), and Wait ({seconds}).
 When the request includes a URL, planner_steps must begin with Navigate to that URL.
+For unused fields in a planner step's params object and entities object, return null.
 Extract username and password into entities only when both are explicitly supplied in the user
 request. Do not invent, repair, transform, or suggest corrections to credentials, URLs, account
 numbers, or values that may already have been typed in a browser tab. If login is requested but
@@ -45,18 +46,58 @@ EXECUTABLE_SKILLS = {
 
 PLANNER_RESPONSE_SCHEMA = {
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "goal": {"type": "string"},
         "target_url": {"type": ["string", "null"]},
         "actions": {"type": "array", "items": {"type": "string"}},
-        "entities": {"type": "object", "additionalProperties": {"type": "string"}},
+        "entities": {
+            "type": "object",
+            "additionalProperties": False,
+            "properties": {
+                "username": {"type": ["string", "null"]},
+                "password": {"type": ["string", "null"]},
+                "click_target": {"type": ["string", "null"]},
+                "search_query": {"type": ["string", "null"]},
+                "quoted_text": {"type": ["string", "null"]},
+                "secondary_text": {"type": ["string", "null"]},
+                "menu_path": {"type": ["string", "null"]},
+                "wait_seconds": {"type": ["string", "null"]},
+            },
+            "required": [
+                "username",
+                "password",
+                "click_target",
+                "search_query",
+                "quoted_text",
+                "secondary_text",
+                "menu_path",
+                "wait_seconds",
+            ],
+        },
         "planner_steps": {
             "type": "array",
             "items": {
                 "type": "object",
+                "additionalProperties": False,
                 "properties": {
                     "skill": {"type": "string", "enum": sorted(EXECUTABLE_SKILLS)},
-                    "params": {"type": "object"},
+                    "params": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "properties": {
+                            "url": {"type": ["string", "null"]},
+                            "text": {"type": ["string", "null"]},
+                            "selector": {"type": ["string", "null"]},
+                            "value": {"type": ["string", "null"]},
+                            "path": {
+                                "type": ["array", "null"],
+                                "items": {"type": "string"},
+                            },
+                            "seconds": {"type": ["number", "null"]},
+                        },
+                        "required": ["url", "text", "selector", "value", "path", "seconds"],
+                    },
                     "description": {"type": "string"},
                 },
                 "required": ["skill", "params", "description"],
@@ -112,6 +153,7 @@ class OpenAIRequestAnalyzer:
                         "type": "json_schema",
                         "name": "browser_execution_plan",
                         "schema": PLANNER_RESPONSE_SCHEMA,
+                        "strict": True,
                     }
                 },
             )
@@ -190,7 +232,7 @@ class OpenAIRequestAnalyzer:
             steps.append(
                 {
                     "skill": step["skill"],
-                    "params": params,
+                    "params": {key: value for key, value in params.items() if value is not None},
                     "description": str(step.get("description", "")),
                 }
             )
