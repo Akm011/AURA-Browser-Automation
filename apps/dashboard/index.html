@@ -190,6 +190,10 @@
 
       <section class="card">
         <h2>Website discovery</h2>
+        <p class="muted">
+          Analyze a page first; New task uses its findings when both share the
+          Session ID.
+        </p>
         <div class="row">
           <input
             id="analysis-url"
@@ -372,7 +376,10 @@
             show(
               await api("/plan", {
                 method: "POST",
-                body: JSON.stringify({ request: payload().request }),
+                body: JSON.stringify({
+                  request: payload().request,
+                  session_id: payload().session_id,
+                }),
               }),
             );
           } catch (err) {
@@ -386,17 +393,17 @@
           try {
             const url = document.getElementById("analysis-url").value.trim();
             console.log("Analyzing URL:", url);
-            show(
-              await api("/analyze", {
-                method: "POST",
-                body: JSON.stringify({
-                  url,
-                  headed: document.getElementById("headed").checked,
-                  session_id:
-                    document.getElementById("session-id").value.trim() || null,
-                }),
+            const discovery = await api("/analyze", {
+              method: "POST",
+              body: JSON.stringify({
+                url,
+                headed: document.getElementById("headed").checked,
+                session_id:
+                  document.getElementById("session-id").value.trim() || null,
               }),
-            );
+            });
+            document.getElementById("session-id").value = discovery.session_id;
+            show(discovery);
           } catch (err) {
             show(String(err));
           }

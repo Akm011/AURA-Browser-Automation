@@ -23,6 +23,9 @@ class AuraSettings(BaseSettings):
     openai_api_key: str | None = None
     openai_request_analyzer_model: str = "gpt-5.6-terra"
     openai_request_analyzer_reasoning_effort: str = "medium"
+    llm_provider: str = "openai"
+    litellm_model: str = "openai/gpt-4o-mini"
+    litellm_api_key: str | None = None
 
     browser_headless: bool = True
     browser_timeout_ms: int = 30_000

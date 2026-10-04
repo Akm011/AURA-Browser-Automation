@@ -33,6 +33,8 @@ class ExecutionPlan(BaseModel):
 
     request: str
     steps: list[PlanStep] = Field(default_factory=list)
+    requires_approval: bool = False
+    approval_reason: str | None = None
 
 
 class StepExecutionResult(BaseModel):
@@ -49,3 +51,4 @@ class PlanExecutionResult(BaseModel):
     step_results: list[StepExecutionResult] = Field(default_factory=list)
     error: str | None = None
     screenshot_path: str | None = None
+    validation: dict[str, Any] = Field(default_factory=dict)

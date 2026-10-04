@@ -123,3 +123,25 @@ def test_analyzer_preserves_explicit_sign_in_click_and_normalizes_markdown_url()
         "FillInput",
         "ClickElement",
     ]
+
+
+def test_analyzer_preserves_explicit_download_skill_over_generic_ai_click() -> None:
+    responses = FakeResponses(
+        '''{"goal":"Download report","target_url":"https://example.com","actions":["navigate","click"],'''
+        '''"entities":{},"planner_steps":[{"skill":"Navigate","params":{"url":"https://example.com"},'''
+        '''"description":"Open"},{"skill":"ClickElement","params":{"text":"report"},'''
+        '''"description":"Click report"}],"credentials_provided":false,"correction_suggestions":[],'''
+        '''"needs_clarification":false,"clarification_reason":null}'''
+    )
+    analyzer = OpenAIRequestAnalyzer(
+        settings=AuraSettings(openai_api_key="test-key"),
+        client=SimpleNamespace(responses=responses),
+    )
+
+    intent = analyzer.analyze("Open https://example.com and download report")
+
+    assert intent.proposed_steps == []
+    assert [step.skill for step in ExecutionPlanner().plan(intent).steps] == [
+        "Navigate",
+        "DownloadFile",
+    ]

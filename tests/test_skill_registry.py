@@ -6,7 +6,7 @@ from aura_skills import BrowserSkill, SkillContext, SkillRegistry, SkillResult, 
 def test_default_registry_exposes_all_month_one_skills() -> None:
     registry = default_registry()
 
-    assert registry.list_names() == [
+    assert {
         "ClickElement",
         "FillInput",
         "FindLoginForm",
@@ -14,7 +14,7 @@ def test_default_registry_exposes_all_month_one_skills() -> None:
         "NavigateMenu",
         "SelectDropdown",
         "Wait",
-    ]
+    } <= set(registry.list_names())
     assert registry.get("Wait") is not None
     assert registry.get("Unknown") is None
 

@@ -28,6 +28,7 @@ class TaskRecord(BaseModel):
     headed: bool = False
     session_id: str | None = None
     step_delay_seconds: float | None = None
+    approved: bool = False
 
     status: TaskStatus = TaskStatus.PENDING
 
@@ -69,6 +70,7 @@ class TaskStore:
         headed: bool = False,
         session_id: str | None = None,
         step_delay_seconds: float | None = None,
+        approved: bool = False,
         enqueue: bool = True,
     ) -> TaskRecord:
         task = TaskRecord(
@@ -76,6 +78,7 @@ class TaskStore:
             headed=headed,
             session_id=session_id,
             step_delay_seconds=step_delay_seconds,
+            approved=approved,
         )
 
         self._tasks[task.id] = task

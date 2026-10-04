@@ -113,6 +113,9 @@ class BrowserManager:
             success=success,
         )
 
+    def record_discovery(self, summary: dict) -> None:
+        self.sessions.record_discovery(self.session_id, summary)
+
     async def cookies(self) -> list[dict]:
         if self._context is None:
             await self.start()

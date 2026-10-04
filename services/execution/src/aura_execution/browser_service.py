@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 import asyncio
+from uuid import uuid4
 
-from aura_browser import BrowserManager, configure_logging
+from aura_browser import BrowserManager, DOMAnalyzer, NavigationGraphBuilder, SessionManager, configure_logging
 from aura_models.config import AuraSettings, get_settings
 from aura_models.planning import (
     ExecutionPlan,
     PlanExecutionResult,
     PlanStep,
 )
-from aura_planner import PlannerAgent
+from aura_planner import PlanValidator, PlannerAgent
 from aura_skills import ActionExecutor
 
 from aura_execution.task_store import (
@@ -17,6 +18,7 @@ from aura_execution.task_store import (
     TaskStatus,
     TaskStore,
 )
+from aura_execution.log_store import LogStore
 
 
 class BrowserExecutionService:
@@ -30,23 +32,19 @@ class BrowserExecutionService:
     ) -> None:
         self.settings = settings or get_settings()
         self.task_store = task_store or TaskStore()
+        self.log_store = LogStore(self.settings.logs_dir)
         self.planner = planner or PlannerAgent()
 
         self._worker_task: asyncio.Task | None = None
 
     def list_skills(self) -> list[str]:
-        return (
-            ActionExecutor()
-            .registry
-            .list_names()
-            + [
-                ActionExecutor.NAVIGATE_SKILL,
-                "Wait",
-            ]
-        )
+        return sorted({*ActionExecutor().registry.list_names(), ActionExecutor.NAVIGATE_SKILL})
 
     def list_tools(self) -> list[dict[str, object]]:
-        tools = ActionExecutor().registry.tool_definitions()
+        tools = [
+            tool for tool in ActionExecutor().registry.tool_definitions()
+            if tool["name"] != "Wait"
+        ]
         return [
             *tools,
             {"name": "Navigate", "description": "Open a URL.",
@@ -58,8 +56,36 @@ class BrowserExecutionService:
     def create_plan(
         self,
         request: str,
+        session_id: str | None = None,
     ) -> ExecutionPlan:
-        return self.planner.plan(request)
+        discovery = SessionManager(self.settings.sessions_dir).load_memory(session_id).get("discovery")
+        return self.planner.plan(request, discovery=discovery if isinstance(discovery, dict) else None)
+
+    async def analyze_url(
+        self,
+        url: str,
+        *,
+        headed: bool = False,
+        session_id: str | None = None,
+    ) -> dict:
+        """Discover visible page structure without performing a task action."""
+        settings = self._runtime_settings(headed)
+        configure_logging(settings)
+        analysis_session_id = session_id or str(uuid4())
+        async with BrowserManager(settings, session_id=analysis_session_id).session() as browser:
+            page = await browser.new_page()
+            response = await page.goto(url, wait_until="domcontentloaded")
+            if response is None or not response.ok:
+                status = response.status if response else "no_response"
+                raise ValueError(f"Navigation failed with status: {status}")
+            summary = await DOMAnalyzer().summarize(page)
+            browser.record_discovery(summary)
+            return {
+                "session_id": analysis_session_id,
+                "summary": summary,
+                "navigation_graph": NavigationGraphBuilder.build(summary),
+                "screenshot_path": await browser.capture_screenshot(page, label="analysis"),
+            }
 
     async def execute_sync(
         self,
@@ -68,15 +94,11 @@ class BrowserExecutionService:
         headed: bool | None = None,
         session_id: str | None = None,
         step_delay_seconds: float | None = None,
+        approved: bool = False,
         plan_only: bool = False,
     ) -> ExecutionPlan | PlanExecutionResult:
         settings = self._runtime_settings(headed, step_delay_seconds)
         configure_logging(settings)
-
-        plan = self.create_plan(request)
-
-        if plan_only:
-            return plan
 
         task = self.task_store.create(
             request,
@@ -86,6 +108,15 @@ class BrowserExecutionService:
             enqueue=False,
         )
         task = self._ensure_session_id(task)
+        self._persist_log(task.id)
+
+        try:
+            plan = self.create_plan(request, task.session_id)
+        except Exception as exc:
+            self.task_store.update(task.id, status=TaskStatus.FAILED, error=str(exc))
+            self.task_store.add_event(task.id, "failed", str(exc))
+            self._persist_log(task.id)
+            raise
 
         self.task_store.update(
             task.id,
@@ -93,6 +124,22 @@ class BrowserExecutionService:
             plan=plan,
         )
         self.task_store.add_event(task.id, "planned", f"Prepared {len(plan.steps)} steps")
+        self._persist_log(task.id)
+
+        if plan_only:
+            self.task_store.update(task.id, status=TaskStatus.COMPLETED)
+            self.task_store.add_event(task.id, "completed", "Plan created without execution")
+            self._persist_log(task.id)
+            return plan
+        if plan.requires_approval and not approved:
+            self.task_store.update(
+                task.id,
+                status=TaskStatus.FAILED,
+                error=plan.approval_reason,
+            )
+            self.task_store.add_event(task.id, "failed", plan.approval_reason or "Approval required")
+            self._persist_log(task.id)
+            raise PermissionError(plan.approval_reason)
 
         try:
             result = await self._run_plan(
@@ -101,6 +148,7 @@ class BrowserExecutionService:
                 run_id=task.id,
                 session_id=task.session_id,
             )
+            result.validation = PlanValidator.validate_result(result)
 
             status = (
                 TaskStatus.COMPLETED
@@ -114,7 +162,9 @@ class BrowserExecutionService:
                 result=result,
                 error=result.error,
             )
+            self._record_step_events(task.id, result)
             self.task_store.add_event(task.id, status, result.error or "Execution completed")
+            self._persist_log(task.id)
 
             return result
 
@@ -124,6 +174,7 @@ class BrowserExecutionService:
                 status=TaskStatus.FAILED,
                 error=str(exc),
             )
+            self._persist_log(task.id)
             raise
 
     async def enqueue(
@@ -133,14 +184,17 @@ class BrowserExecutionService:
         headed: bool = False,
         session_id: str | None = None,
         step_delay_seconds: float | None = None,
+        approved: bool = False,
     ) -> TaskRecord:
         task = self.task_store.create(
             request,
             headed=headed,
             session_id=session_id,
             step_delay_seconds=step_delay_seconds,
+            approved=approved,
         )
         task = self._ensure_session_id(task)
+        self._persist_log(task.id)
 
         self._ensure_worker()
 
@@ -276,9 +330,17 @@ class BrowserExecutionService:
         configure_logging(settings)
 
         try:
-            plan = self.create_plan(
-                task.request
-            )
+            plan = self.create_plan(task.request, task.session_id)
+            if plan.requires_approval and not task.approved:
+                self.task_store.update(
+                    task_id,
+                    status=TaskStatus.FAILED,
+                    plan=plan,
+                    error=plan.approval_reason,
+                )
+                self.task_store.add_event(task_id, "failed", plan.approval_reason or "Approval required")
+                self._persist_log(task_id)
+                return
 
             result = await self._run_plan(
                 plan,
@@ -292,6 +354,7 @@ class BrowserExecutionService:
                 if result.success
                 else TaskStatus.FAILED
             )
+            result.validation = PlanValidator.validate_result(result)
 
             self.task_store.update(
                 task_id,
@@ -300,7 +363,9 @@ class BrowserExecutionService:
                 result=result,
                 error=result.error,
             )
+            self._record_step_events(task_id, result)
             self.task_store.add_event(task_id, status, result.error or "Execution completed")
+            self._persist_log(task_id)
 
         except Exception as exc:
             self.task_store.update(
@@ -308,7 +373,21 @@ class BrowserExecutionService:
                 status=TaskStatus.FAILED,
                 error=str(exc),
             )
+            self._persist_log(task_id)
 
     async def shutdown(self) -> None:
         if self._worker_task is not None:
             await self._worker_task
+
+    def _record_step_events(self, task_id: str, result: PlanExecutionResult) -> None:
+        for step in result.step_results:
+            status = "step_completed" if step.success else "step_failed"
+            self.task_store.add_event(task_id, status, f"{step.skill}: {step.message}")
+
+    def list_logs(self, session_id: str | None = None, limit: int = 50) -> list[dict]:
+        return self.log_store.list(session_id, limit)
+
+    def _persist_log(self, task_id: str) -> None:
+        task = self.task_store.get(task_id)
+        if task is not None:
+            self.log_store.save(task)

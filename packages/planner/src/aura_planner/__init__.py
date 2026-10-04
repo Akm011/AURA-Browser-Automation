@@ -3,6 +3,7 @@
 from aura_planner.agent import PlannerAgent
 from aura_planner.execution_planner import ExecutionPlanner
 from aura_planner.intent import IntentParser
+from aura_planner.litellm_analyzer import LiteLLMRequestAnalyzer
 from aura_planner.request_analyzer import OpenAIRequestAnalyzer
 from aura_planner.validation import PlanValidator
 
@@ -10,6 +11,7 @@ __all__ = [
     "PlannerAgent",
     "ExecutionPlanner",
     "IntentParser",
+    "LiteLLMRequestAnalyzer",
     "OpenAIRequestAnalyzer",
     "PlanValidator",
 ]

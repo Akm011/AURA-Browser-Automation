@@ -161,4 +161,28 @@ class ExecutionPlanner:
                 )
             ]
 
+        if action == "download":
+            target = intent.entities.get("download_target") or intent.entities.get("quoted_text")
+            return [
+                PlanStep(
+                    skill="DownloadFile",
+                    params={"text": target} if target else {},
+                    description="Download requested file",
+                )
+            ]
+
+        if action == "extract":
+            return [
+                PlanStep(skill="ExtractText", params={}, description="Extract visible page text")
+            ]
+
+        if action == "scroll":
+            return [PlanStep(skill="ScrollPage", params={}, description="Scroll the page")]
+
+        if action == "press":
+            key = intent.entities.get("key") or intent.entities.get("quoted_text")
+            return [
+                PlanStep(skill="PressKey", params={"key": key} if key else {}, description="Press key")
+            ]
+
         return []

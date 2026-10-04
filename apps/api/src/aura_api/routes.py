@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 
 from aura_api.schemas import (
+    AnalyzeRequest,
     ExecuteRequest,
     HealthResponse,
     PlanRequest,
@@ -35,20 +36,33 @@ async def list_skills() -> SkillsResponse:
 @router.post("/plan")
 async def create_plan(body: PlanRequest):
     service = get_execution_service()
-    plan = service.create_plan(body.request)
+    plan = service.create_plan(body.request, body.session_id)
     return plan.model_dump(mode="json")
+
+
+@router.post("/analyze")
+async def analyze_website(body: AnalyzeRequest) -> dict:
+    return await get_execution_service().analyze_url(
+        body.url,
+        headed=body.headed,
+        session_id=body.session_id,
+    )
 
 
 @router.post("/execute")
 async def execute_task(body: ExecuteRequest):
     service = get_execution_service()
-    outcome = await service.execute_sync(
-        body.request,
-        headed=body.headed,
-        session_id=body.session_id,
-        step_delay_seconds=body.step_delay_seconds,
-        plan_only=body.plan_only,
-    )
+    try:
+        outcome = await service.execute_sync(
+            body.request,
+            headed=body.headed,
+            session_id=body.session_id,
+            step_delay_seconds=body.step_delay_seconds,
+            approved=body.approved,
+            plan_only=body.plan_only,
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     return outcome.model_dump(mode="json")
 
 
@@ -60,6 +74,7 @@ async def create_task(body: TaskCreateRequest) -> TaskResponse:
         headed=body.headed,
         session_id=body.session_id,
         step_delay_seconds=body.step_delay_seconds,
+        approved=body.approved,
     )
     return _to_task_response(task)
 
@@ -85,6 +100,11 @@ async def get_task_timeline(task_id: str) -> list[dict[str, str]]:
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
     return task.timeline
+
+
+@router.get("/logs")
+async def list_logs(session_id: str | None = None, limit: int = 50) -> list[dict]:
+    return get_execution_service().list_logs(session_id=session_id, limit=limit)
 
 
 def _to_task_response(task: TaskRecord) -> TaskResponse:

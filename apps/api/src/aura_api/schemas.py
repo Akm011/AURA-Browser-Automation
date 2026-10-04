@@ -7,6 +7,13 @@ from aura_models.planning import ExecutionPlan, PlanExecutionResult
 
 class PlanRequest(BaseModel):
     request: str = Field(..., min_length=3, examples=["Open https://example.com and click More information"])
+    session_id: str | None = Field(default=None, min_length=1, max_length=100)
+
+
+class AnalyzeRequest(BaseModel):
+    url: str = Field(..., min_length=8, pattern=r"^https?://")
+    headed: bool = False
+    session_id: str | None = Field(default=None, min_length=1, max_length=100)
 
 
 class ExecuteRequest(BaseModel):
@@ -14,6 +21,7 @@ class ExecuteRequest(BaseModel):
     headed: bool = False
     session_id: str | None = Field(default=None, min_length=1, max_length=100)
     step_delay_seconds: float | None = Field(default=None, ge=0)
+    approved: bool = False
     plan_only: bool = False
 
 
@@ -22,6 +30,7 @@ class TaskCreateRequest(BaseModel):
     headed: bool = False
     session_id: str | None = Field(default=None, min_length=1, max_length=100)
     step_delay_seconds: float | None = Field(default=None, ge=0)
+    approved: bool = False
 
 
 class HealthResponse(BaseModel):

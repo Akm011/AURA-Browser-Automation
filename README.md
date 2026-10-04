@@ -1,10 +1,41 @@
-# AURA v0.1 – Browser Intelligence Core
+# AURA v0.2 - Browser Intelligence Engine
+
+## Month 2 quick start
+
+```powershell
+uv sync --all-packages
+uv run playwright install chromium
+Copy-Item .env.example .env
+uv run --package aura-api uvicorn aura_api.main:app --host 127.0.0.1 --port 8000
+```
+
+Open `http://127.0.0.1:8000` for the dashboard and
+`http://127.0.0.1:8000/docs` for the API. See the
+[Month 2 implementation guide](docs/month2.md) and
+[demo script](docs/month2-demo.md).
+
+Month 2 adds page discovery and navigation graphs, OpenAI or LiteLLM planning
+with deterministic fallback, 12 browser skills, approval checks, persistent
+sessions and continuation memory, screenshots, execution timelines, MCP-ready
+tool definitions, and Docker deployment.
+
+Run verification with:
+
+```powershell
+uv run pytest
+```
+
+For Docker:
+
+```powershell
+docker compose up --build
+```
 
 **AURA** is an Enterprise Browser Intelligence Platform that teaches AI to understand and operate arbitrary websites like a human. Month 1 builds the reusable foundation: natural language → execution plan → generic browser skills → Playwright.
 
 > Based on the [Month 1 Engineering Blueprint](docs/month1_Final.html)
 
-## What Month 1 delivers
+## Month 1 foundation
 
 - Natural language → execution plan (Week 2)
 - Generic browser execution engine

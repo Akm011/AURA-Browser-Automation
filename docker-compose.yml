@@ -1,0 +1,11 @@
+services:
+  aura:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      AURA_BROWSER_HEADLESS: "true"
+    volumes:
+      - ./artifacts:/app/artifacts

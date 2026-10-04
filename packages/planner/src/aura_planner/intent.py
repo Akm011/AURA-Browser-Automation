@@ -28,6 +28,11 @@ class IntentParser:
         "open": "navigate",
         "select": "select",
         "download": "download",
+        "extract": "extract",
+        "read": "extract",
+        "scroll": "scroll",
+        "press": "press",
+        "upload": "upload",
         "menu": "menu",
         "wait": "wait",
     }
@@ -115,6 +120,14 @@ class IntentParser:
         menu_match = re.search(r"(?:navigate to|go to)\s+(.+?)\s+menu", text, re.I)
         if menu_match:
             entities["menu_path"] = menu_match.group(1).strip()
+
+        download_match = re.search(r"download(?:\s+the)?\s+(.+?)(?:\.|,|$)", text, re.I)
+        if download_match:
+            entities["download_target"] = download_match.group(1).strip().strip("'\"")
+
+        key_match = re.search(r"press\s+([\w+]+)", text, re.I)
+        if key_match:
+            entities["key"] = key_match.group(1)
 
         return entities
 

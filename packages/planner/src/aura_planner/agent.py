@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import Any, TypedDict
 
 from aura_models.config import AuraSettings, get_settings
-from aura_models.planning import ExecutionPlan, ParsedIntent
+from aura_models.planning import ExecutionPlan, ParsedIntent, PlanStep
 from langgraph.graph import END, START, StateGraph
 
 from aura_planner.execution_planner import ExecutionPlanner
 from aura_planner.intent import IntentParser
+from aura_planner.litellm_analyzer import LiteLLMRequestAnalyzer
 from aura_planner.request_analyzer import OpenAIRequestAnalyzer
 from aura_planner.validation import PlanValidator
 
@@ -32,9 +33,9 @@ class PlannerAgent:
     ) -> None:
         self.intent_parser = intent_parser or IntentParser()
         settings = settings or get_settings()
-        self.request_analyzer = request_analyzer or OpenAIRequestAnalyzer(
-            settings=settings,
-            fallback_parser=self.intent_parser,
+        analyzer_type = LiteLLMRequestAnalyzer if settings.llm_provider == "litellm" else OpenAIRequestAnalyzer
+        self.request_analyzer = request_analyzer or analyzer_type(
+            settings=settings, fallback_parser=self.intent_parser
         )
         self.execution_planner = execution_planner or ExecutionPlanner()
         self.plan_validator = plan_validator or PlanValidator()
@@ -49,7 +50,7 @@ class PlannerAgent:
         graph.add_edge("plan_execution", END)
         return graph.compile()
 
-    def plan(self, request: str) -> ExecutionPlan:
+    def plan(self, request: str, discovery: dict[str, Any] | None = None) -> ExecutionPlan:
         result = self._graph.invoke(
             {
                 "request": request,
@@ -63,7 +64,34 @@ class PlannerAgent:
         plan = result.get("plan")
         if plan is None:
             raise ValueError("Planner did not produce an execution plan")
-        return plan
+        return self._apply_discovery_hints(plan, discovery)
+
+    @staticmethod
+    def _apply_discovery_hints(
+        plan: ExecutionPlan, discovery: dict[str, Any] | None
+    ) -> ExecutionPlan:
+        if not discovery:
+            return plan
+        hinted = plan.model_copy(deep=True)
+        url = discovery.get("url")
+        if isinstance(url, str) and not any(step.skill == "Navigate" for step in hinted.steps):
+            hinted.steps.insert(0, PlanStep(
+                skill="Navigate", params={"url": url}, description="Open discovered page"
+            ))
+        elements = discovery.get("elements", [])
+        if not isinstance(elements, list):
+            return hinted
+        for step in hinted.steps:
+            target = step.params.get("text")
+            if step.skill != "ClickElement" or not isinstance(target, str):
+                continue
+            match = next((item for item in elements if isinstance(item, dict)
+                          and isinstance(item.get("name"), str)
+                          and target.casefold() in item["name"].casefold()), None)
+            if match:
+                step.params = {"selector": f"#{match['id']}"} if match.get("id") else {"text": match["name"]}
+                step.description = f"Click discovered element '{match['name']}'"
+        return hinted
 
     def _parse_intent(self, state: PlannerState) -> PlannerState:
         try:

@@ -80,6 +80,22 @@ class SessionManager:
         )
         memory["last_url"] = url
         memory["completed_tasks"] = tasks[-20:]
+        self._save_memory(session_id, memory)
+
+    def record_discovery(self, session_id: str | None, summary: dict) -> None:
+        if not session_id:
+            return
+        memory = self.load_memory(session_id)
+        memory["discovery"] = {
+            "analyzed_at": datetime.now(UTC).isoformat(),
+            "url": summary.get("url"),
+            "title": summary.get("title"),
+            "headings": summary.get("headings", []),
+            "elements": summary.get("elements", []),
+        }
+        self._save_memory(session_id, memory)
+
+    def _save_memory(self, session_id: str, memory: dict) -> None:
         path = self.memory_path(session_id)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(memory, indent=2), encoding="utf-8")

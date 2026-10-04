@@ -42,6 +42,11 @@ EXECUTABLE_SKILLS = {
     "SelectDropdown",
     "NavigateMenu",
     "Wait",
+    "PressKey",
+    "ScrollPage",
+    "ExtractText",
+    "DownloadFile",
+    "UploadFile",
 }
 
 PLANNER_RESPONSE_SCHEMA = {
@@ -95,8 +100,13 @@ PLANNER_RESPONSE_SCHEMA = {
                                 "items": {"type": "string"},
                             },
                             "seconds": {"type": ["number", "null"]},
+                            "key": {"type": ["string", "null"]},
+                            "pixels": {"type": ["number", "null"]},
+                            "path": {"type": ["string", "null"]},
                         },
-                        "required": ["url", "text", "selector", "value", "path", "seconds"],
+                        "required": [
+                            "url", "text", "selector", "value", "path", "seconds", "key", "pixels"
+                        ],
                     },
                     "description": {"type": "string"},
                 },
@@ -171,24 +181,45 @@ class OpenAIRequestAnalyzer:
 
     def _to_intent(self, request: str, output: str) -> ParsedIntent:
         payload: dict[str, Any] = json.loads(output)
-        actions = [
+        model_actions = [
             action
             for action in payload.get("actions", [])
             if action in IntentParser.ACTION_KEYWORDS.values()
         ]
         explicit_intent = self.fallback_parser.parse(request)
+        actions = list(dict.fromkeys([*explicit_intent.actions, *model_actions]))
         entities = {
             str(key): str(value)
             for key, value in payload.get("entities", {}).items()
             if isinstance(value, (str, int, float))
         }
         proposed_steps = self._validated_steps(payload.get("planner_steps", []))
+        required_skills = {
+            "download": "DownloadFile",
+            "extract": "ExtractText",
+            "scroll": "ScrollPage",
+            "press": "PressKey",
+            "upload": "UploadFile",
+        }
+        if any(
+            action in explicit_intent.actions
+            and required_skill not in {step["skill"] for step in proposed_steps}
+            for action, required_skill in required_skills.items()
+        ):
+            proposed_steps = []
         explicit_click_target = explicit_intent.entities.get("click_target")
         if explicit_click_target:
             for step in proposed_steps:
                 if step["skill"] == "ClickElement" and step["params"].get("text"):
                     step["params"]["text"] = explicit_click_target
-        if not proposed_steps and not bool(payload.get("needs_clarification")):
+        has_deterministic_plan = bool(explicit_intent.target_url) or any(
+            action != "navigate" for action in explicit_intent.actions
+        )
+        if (
+            not proposed_steps
+            and not bool(payload.get("needs_clarification"))
+            and not has_deterministic_plan
+        ):
             raise ValueError(
                 "OpenAI request analysis did not return an executable planner_steps list"
             )
@@ -211,7 +242,7 @@ class OpenAIRequestAnalyzer:
             raw_request=request.strip(),
             target_url=explicit_intent.target_url or payload.get("target_url"),
             goal=str(payload.get("goal") or request.strip()),
-            actions=list(dict.fromkeys(actions)) or explicit_intent.actions,
+            actions=actions,
             entities=entities,
             proposed_steps=proposed_steps,
             credentials_provided=has_credentials,
